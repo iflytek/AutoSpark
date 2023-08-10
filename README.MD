@@ -150,6 +150,10 @@ AutoSpark是一款专注中文领域大模型AI智能体(Agent)应用框架, 当
   * AutoSpark的发展定位会有别于SuperAGI，主要区别在于我们会专注于中文领域大模型，以及像Prompts调优之类，都是基于中文
   * 我们会积极的向上游提供Pr，比如在一些通用的特性上，如TOOL的动态注册方案，时间ok的时候，我们会及时的PR给SuerAGI项目
 
+* 实际在星火上的效果不太好
+
+  答:
+  * 我们正在紧锣密鼓的调优框架，大模型本身效果也在逐步提升，可以关注临近的[星火大模型发布会](https://xinghuo.xfyun.cn/)
 ## 关联项目
 [Spark AI Python SDK](https://github.com/iflytek/spark-ai-python)
 
