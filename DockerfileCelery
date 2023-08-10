@@ -1,0 +1,30 @@
+FROM python:3.9
+
+WORKDIR /app
+
+#RUN apt-get update && apt-get install --no-install-recommends -y git wget libpq-dev gcc python3-dev && pip install psycopg2
+RUN  pip config set global.index-url https://pypi.mirrors.ustc.edu.cn/simple/ 
+RUN pip install --upgrade pip
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install llama-index==0.6.35 -i  https://pypi.tuna.tsinghua.edu.cn/simple 
+RUN pip config set global.index-url https://repo.model.xfyun.cn/api/packages/administrator/pypi/simple  &&  pip config set global.extra-index-url https://pypi.mirrors.ustc.edu.cn/simple/
+RUN pip install spark-ai-python  websocket-client  autospark-kit --force  -i https://repo.model.xfyun.cn/api/packages/administrator/pypi/simple
+
+
+WORKDIR /app
+COPY . .
+COPY config.yaml .
+
+# Downloads the tools
+RUN python autospark/tool_manager.py
+
+# Set executable permissions for install_tool_dependencies.sh
+RUN chmod +x install_tool_dependencies.sh
+
+# Install dependencies
+RUN ./install_tool_dependencies.sh
+
+
+CMD ["celery", "-A", "autospark.worker", "worker", "--beat","--loglevel=info"]

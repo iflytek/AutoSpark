@@ -1,0 +1,18 @@
+.apm_dashboard_container {
+    margin-top: 20px;
+    display: flex;
+    flex-direction: column;
+    background-color: #fff;
+    padding: 0 10px;
+    border-radius: 10px;
+}
+
+.apm_dashboard {
+    margin-top: 16px;
+    height: calc(100vh - 16vh);
+    overflow-y: auto;
+}
+
+.itembg{
+  background-color: #f0f5fe !important;
+}
