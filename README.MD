@@ -160,6 +160,8 @@ AutoSpark是一款专注中文领域大模型AI智能体(Agent)应用框架, 当
 ## 关联项目
 [Spark AI Python SDK](https://github.com/iflytek/spark-ai-python)
 
+[Awesome Spark Prompts](https://github.com/iflytek/awesome_spark_prompts)
+
 ## 鸣谢
 [SuerAGI](https://github.com/TransformerOptimus/SuperAGI#)
 [AutoGPT](https://github.com/Significant-Gravitas/Auto-GPT)
