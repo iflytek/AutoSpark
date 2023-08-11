@@ -153,7 +153,10 @@ AutoSpark是一款专注中文领域大模型AI智能体(Agent)应用框架, 当
 * 实际在星火上的效果不太好
 
   答:
-  * 我们正在紧锣密鼓的调优框架，大模型本身效果也在逐步提升，可以关注临近的[星火大模型发布会](https://xinghuo.xfyun.cn/)
+  * 我们正在紧锣密鼓的调优框架，大模型本身效果也在逐步提升，可以关注临近的[星火大模型发布会](https://xinghuo.xfyun.cn/)请关注:
+
+  ![img.png](docs/imgs/v2.0.png)
+
 ## 关联项目
 [Spark AI Python SDK](https://github.com/iflytek/spark-ai-python)
 
