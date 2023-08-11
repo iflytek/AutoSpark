@@ -1,26 +1,18 @@
 name: Bug report 
-description: Create a bug report for SuperAGI.
+description: Create a bug report for Autospark.
 labels: ['status: needs triage']
 body:
   - type: markdown
     attributes:
       value: |
-        ### ⚠️ Issue Creation Guideline
-        * Check out our [roadmap] and join our [discord] to discuss what's going on
-        * If you need help, you can ask in the [#general] section or in [#support]
-        * **Thoroughly search the [existing issues] before creating a new one**
-        * Read through our docs:
-        [roadmap]: https://github.com/users/TransformerOptimus/projects/5
-        [discord]: https://discord.gg/dXbRe5BHJC
-        [#general]: https://discord.com/channels/1107593006032355359/1107642413993959505
-        [#support]: https://discord.com/channels/1107593006032355359/1107645922797703198
-        [existing issues]: https://github.com/TransformerOptimus/SuperAGI/issues
+        ### ⚠️ 问题创建指引
+        [existing issues]: https://github.com/iflytek/autospark/issues
   - type: checkboxes
     attributes:
       label: ⚠️ Check for existing issues before proceeding. ⚠️
       description: >
-        Please [search the history](https://github.com/TransformerOptimus/SuperAGI/issues)
-        to see if an issue already exists for the same problem.
+        请检索 [search the history](https://github.com/iflytek/autosparke/issues)
+        确保提交bug之前，已经查阅已有bug列表没有重复bug
       options:
         - label: I have searched the existing issues, and there is no existing issue for my problem
           required: true
@@ -28,25 +20,17 @@ body:
   - type: markdown
     attributes:
       value: |
-        Please confirm that the issue you have is described well and precise in the title above ⬆️.
-        Think like this: What would you type if you were searching for the issue?
+        确保提交bug之前，已经查阅已有bug列表没有重复bug，且问题务必明确具体
         
         For example:
-        ❌ - my SuperAGI agent keeps looping
+        ❌ - AutoSpark无法退出
         ✅ - After performing Write Tool, SuperAGI goes into a loop where it keeps trying to write the file.
-        
-        Please help us help you by following these steps:
-        - Search for existing issues, adding a comment when you have the same or similar issue is tidier than "new issue" and 
-          newer issues will not be reviewed earlier, this is dependent on the current priorities set by our wonderful team
-        - Ask on our Discord if your issue is known when you are unsure (https://discord.gg/dXbRe5BHJC)
-        - Provide relevant info:
-          - Provide Docker Logs(docker compose logs) whenever possible.
-          - If it's a pip/packages issue, mention this in the title and provide pip version, python version.
+
   - type: dropdown
     attributes:
-      label: Where are you using SuperAGI?
+      label: Where are you using Autospark?
       description: >
-        Please select the operating system you were using to run SuperAGI when this problem occurred.
+        当前使用操作系统:
       options:
         - Windows
         - Linux
@@ -64,10 +48,10 @@ body:
 
   - type: dropdown
     attributes:
-      label: Which branch of SuperAGI are you using?
+      label: 使用版本分支?
       description: |
-        Please select which version of SuperAGI you were using when this issue occurred.
-        If installed with git you can run `git branch` to see which version of Auto-GPT you are running.
+        请选择出现问题的版本分支
+
       options:
         - Main
         - Dev (branch)
@@ -76,23 +60,19 @@ body:
 
   - type: dropdown
     attributes:
-      label: Do you use OpenAI GPT-3.5 or GPT-4?
+      label: 你是使用星火大模型的账号实验的吗？
       description: >
-        If you are using SuperAGI with GPT-3.5, your problems may be caused by
-        the limitations of GPT-3.5 like incorrect Tool selection thus causing looping in the agent feed.
+        autospark基于SuperAGI， 如果有openai相关问题，不在本项目回复
       options:
-        - GPT-3.5
-        - GPT-3.5(16k)
-        - GPT-4
-        - GPT-4(32k)
+        - 星火大模型
     validations:
       required: true
 
   - type: dropdown
     attributes:
-      label: Which area covers your issue best?
+      label: bug属于什么分类?
       description: >
-        Select the area related to the issue you are reporting.
+        请选择bug分类
       options:
         - Installation and setup
         - Resource Manager
@@ -112,18 +92,18 @@ body:
         - type: text
           attributes:
             label: Specify the area
-            description: Please specify the area you think is best related to the issue.
+            description: 请选择最合适的一个分类
 
   - type: textarea
     attributes:
-      label: Describe your issue.
-      description: Describe the problem you are experiencing. Try to describe only the issue and phrase it short but clear. ⚠️ Provide NO other data in this field  
+      label: 描述你的问题
+      description: 用尽可能清晰的语言描述你的问题 
     validations:
       required: true
 
   - type: textarea
     attributes:
-     label: How to replicate your Issue?
+     label: 如何复现?
      description: |
       Mention 代理名称, Agent Description and Agent Goals, along with Model selected. 
       Provide any other data which might be relevant for us to replicate this issue.
