@@ -1,52 +1,36 @@
-name: Bug report 
-description: Create a bug report for SuperAGI.
+name: 问题Bug提交
+description: Create a bug report for Autospark.
 labels: ['status: needs triage']
 body:
   - type: markdown
     attributes:
       value: |
-        ### ⚠️ Issue Creation Guideline
-        * Check out our [roadmap] and join our [discord] to discuss what's going on
-        * If you need help, you can ask in the [#general] section or in [#support]
-        * **Thoroughly search the [existing issues] before creating a new one**
-        * Read through our docs:
-        [roadmap]: https://github.com/users/TransformerOptimus/projects/5
-        [discord]: https://discord.gg/dXbRe5BHJC
-        [#general]: https://discord.com/channels/1107593006032355359/1107642413993959505
-        [#support]: https://discord.com/channels/1107593006032355359/1107645922797703198
-        [existing issues]: https://github.com/TransformerOptimus/SuperAGI/issues
+        ### ⚠️ 问题创建指引
+        [existing issues]: https://github.com/iflytek/autospark/issues
   - type: checkboxes
     attributes:
-      label: ⚠️ Check for existing issues before proceeding. ⚠️
+      label: ⚠️ 请先阅读. ⚠️
       description: >
-        Please [search the history](https://github.com/TransformerOptimus/SuperAGI/issues)
-        to see if an issue already exists for the same problem.
+        搜搜历史问题](https://github.com/iflytek/autospark/issues)
+        确保提交bug之前，已经查阅已有bug列表没有重复bug
       options:
-        - label: I have searched the existing issues, and there is no existing issue for my problem
+        - label: 我已经搜过， 没有找到
           required: true
 
   - type: markdown
     attributes:
       value: |
-        Please confirm that the issue you have is described well and precise in the title above ⬆️.
-        Think like this: What would you type if you were searching for the issue?
+        确保提交bug之前，已经查阅已有bug列表没有重复bug，且问题务必明确具体
         
-        For example:
-        ❌ - my SuperAGI agent keeps looping
-        ✅ - After performing Write Tool, SuperAGI goes into a loop where it keeps trying to write the file.
+        举例:
+        ❌ - AutoSpark无法退出
+        ✅ - 在执行 Write Tool后, Autospark一直在不停的写文件。
         
-        Please help us help you by following these steps:
-        - Search for existing issues, adding a comment when you have the same or similar issue is tidier than "new issue" and 
-          newer issues will not be reviewed earlier, this is dependent on the current priorities set by our wonderful team
-        - Ask on our Discord if your issue is known when you are unsure (https://discord.gg/dXbRe5BHJC)
-        - Provide relevant info:
-          - Provide Docker Logs(docker compose logs) whenever possible.
-          - If it's a pip/packages issue, mention this in the title and provide pip version, python version.
   - type: dropdown
     attributes:
-      label: Where are you using SuperAGI?
+      label: 你在哪个操作系统使用Autospark?
       description: >
-        Please select the operating system you were using to run SuperAGI when this problem occurred.
+        当前使用操作系统:
       options:
         - Windows
         - Linux
@@ -54,20 +38,21 @@ body:
         - Codespaces
         - Web Version
         - Other
+        - 官方Docker 容器
     validations:
       required: true
       nested_fields:
         - type: text
           attributes:
-            label: Specify the system
-            description: Please specify the system you are working on.
+            label: 指定一个操作系统
+            description: 请指定你现在正在用的系统
 
   - type: dropdown
     attributes:
-      label: Which branch of SuperAGI are you using?
+      label: 使用版本分支?
       description: |
-        Please select which version of SuperAGI you were using when this issue occurred.
-        If installed with git you can run `git branch` to see which version of Auto-GPT you are running.
+        请选择出现问题的版本分支
+
       options:
         - Main
         - Dev (branch)
@@ -76,34 +61,31 @@ body:
 
   - type: dropdown
     attributes:
-      label: Do you use OpenAI GPT-3.5 or GPT-4?
+      label: 你是使用星火大模型的账号实验的吗？
       description: >
-        If you are using SuperAGI with GPT-3.5, your problems may be caused by
-        the limitations of GPT-3.5 like incorrect Tool selection thus causing looping in the agent feed.
+        autospark基于SuperAGI， 如果有openai相关问题，不在本项目回复
       options:
-        - GPT-3.5
-        - GPT-3.5(16k)
-        - GPT-4
-        - GPT-4(32k)
+        - 星火大模型
     validations:
       required: true
 
   - type: dropdown
     attributes:
-      label: Which area covers your issue best?
+      label: bug属于什么分类?
       description: >
-        Select the area related to the issue you are reporting.
+        请选择bug分类
       options:
-        - Installation and setup
-        - Resource Manager
-        - Action Console
-        - Performance
-        - Marketplace
-        - Prompt
-        - Tools
-        - Agents
-        - Documentation
-        - Logging
+        - 安装使用
+        - 资源管理器
+        - 性能
+        - 大模型实现
+        - 星火效果
+        - Prompt提示语
+        - 工具插件
+        - 智能代理【Agents】
+        - 文档
+        - 日志
+        - 产品页面
         - Other
     validations:
       required: true
@@ -111,23 +93,21 @@ body:
       nested_fields:
         - type: text
           attributes:
-            label: Specify the area
-            description: Please specify the area you think is best related to the issue.
+            label: 指定一个领域分类
+            description: 请选择最合适的一个分类
 
   - type: textarea
     attributes:
-      label: Describe your issue.
-      description: Describe the problem you are experiencing. Try to describe only the issue and phrase it short but clear. ⚠️ Provide NO other data in this field  
+      label: 描述你的问题
+      description: 用尽可能清晰的语言描述你的问题 
     validations:
       required: true
 
   - type: textarea
     attributes:
-     label: How to replicate your Issue?
+     label: 如何复现?
      description: |
-      Mention 代理名称, Agent Description and Agent Goals, along with Model selected. 
-      Provide any other data which might be relevant for us to replicate this issue.
-      ⚠️ Provide NO other data in this field  
+      大致复现步骤
     validations:
      required: false
 
@@ -137,12 +117,8 @@ body:
         ⚠️ Please keep in mind that the log files may contain personal information such as credentials. Make sure you hide them before copy/pasting it! ⚠️        
   - type: input
     attributes:
-      label: Upload Error Log Content
+      label: 上传bug日志内容
       description: |
-        Upload the error log content, this can help us understand the issue better. 
-        To do this, you can simply copy the logs from the terminal with which you did 'docker compose up' or in a new terminal, 
-        enter 'docker compose logs' and copy/paste the error contents to this field. 
-        ⚠️ The activity log may contain personal data given to SuperAGI by you in prompt or input as well as 
-        any personal information that SuperAGI collected out of files during last run. Please hide them before sharing. ⚠️
+        上传错误日志内容，方便我们帮你定位，分析问题
     validations:
       required: True
