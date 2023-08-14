@@ -34,7 +34,7 @@ jobs:
         python -m pip install --upgrade pip
         pip install flake8 pytest
         # add autospark_kit library 
-        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+        pip install -r requirements.txt
     - name: Lint with flake8
       run: |
         # stop the build if there are Python syntax errors or undefined names
@@ -87,11 +87,12 @@ jobs:
           pip install flake8 pytest
           pip install autospark_kit
           pip install sparkai
-          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          pip install sparkai.api_resources
+          pip install -r requirements.txt
           # add sys.path
       - name: Add module path to sys.path
         run: |
-          python -c "import sys; sys.path.append('/home/AutoSpark')"     
+          python -c "import sys; sys.path.append('/home/runner/work/AutoSpark/AutoSpark')"     
       - name: Test with pytest
         run: |
           pytest --cov=superagi --cov-branch --cov-report term-missing --cov-report xml \
