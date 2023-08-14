@@ -85,6 +85,7 @@ jobs:
           pip install autospark_kit
           pip install sparkai
           pip install llama_index
+          pip install autospark.tools.twitter
           pip install -r requirements.txt
           # add sys.path
           # - name: Add module path to sys.path
