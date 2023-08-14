@@ -84,6 +84,7 @@ jobs:
           pip install flake8 pytest
           pip install autospark_kit
           pip install sparkai
+          pip install llama_index
           pip install -r requirements.txt
           # add sys.path
           # - name: Add module path to sys.path
