@@ -76,7 +76,7 @@ jobs:
             # add python access path
       - name: Set Python Import Path
         run: |
-              export PYTHONPATH=$PYTHONPATH:"./"
+              export PYTHONPATH=$PYTHONPATH:"/home/AutoSpark"
       - name: Set up Python 3.9
         uses: actions/setup-python@v3
         with:
@@ -86,8 +86,12 @@ jobs:
           python -m pip install --upgrade pip
           pip install flake8 pytest
           pip install autospark_kit
+          pip isstall sparkai
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-          
+          # add sys.path
+      - name: Add module path to sys.path
+        run: |
+        python -c "import sys; sys.path.append('/home/AutoSpark')"     
       - name: Test with pytest
         run: |
           pytest --cov=superagi --cov-branch --cov-report term-missing --cov-report xml \
