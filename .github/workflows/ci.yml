@@ -91,7 +91,7 @@ jobs:
           # add sys.path
       - name: Add module path to sys.path
         run: |
-          python -c "import sys; sys.path.append('/home/runner/work/AutoSpark/AutoSpark')"     
+                python -c "import sys; import os; sys.path.append(os.getcwd())"     
       - name: Test with pytest
         run: |
           pytest --cov=superagi --cov-branch --cov-report term-missing --cov-report xml \
