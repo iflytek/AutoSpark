@@ -69,10 +69,10 @@ jobs:
           repository: ${{ github.event.pull_request.head.repo.full_name }}
           submodules: true
 
-      - name: Configure git user SuperAGI-Bot
+      - name: Configure git user AutoSPark-Bot
         run: |
-          git config --global user.name "SuperAGI-Bot"
-          git config --global user.email "github-bot@superagi.com"
+          git config --global user.name "AutoSPark-Bot"
+          git config --global user.email "github-bot@iflytek.com"
             # add python access path
       - name: Set Python Import Path
         run: |
@@ -94,7 +94,7 @@ jobs:
           python -c "import sys; sys.path.append('/home/AutoSpark')"     
       - name: Test with pytest
         run: |
-          pytest --cov=superagi --cov-branch --cov-report term-missing --cov-report xml \
+          pytest --cov=autospark --cov-branch --cov-report term-missing --cov-report xml \
             tests/unit_tests -s
         env:
           CI: true
