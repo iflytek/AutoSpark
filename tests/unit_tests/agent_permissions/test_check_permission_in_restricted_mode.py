@@ -1,11 +1,14 @@
 import pytest
+import sys
 from unittest.mock import MagicMock, Mock
 from autospark.agent.output_parser import AgentOutputParser
 from autospark.agent.auto_spark import AutoSpark
 from autospark.llms.base_llm import BaseLlm
 from autospark_kit.tools.base_tool import BaseTool
 from autospark.vector_store.base import VectorStore
-
+print("-----------------------")
+print(sys.path)
+print("------------------------")
 
 class MockTool(BaseTool):
     def __init__(self, name, permission_required=False):
