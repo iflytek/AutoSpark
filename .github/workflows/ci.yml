@@ -86,9 +86,9 @@ jobs:
           pip install sparkai
           pip install -r requirements.txt
           # add sys.path
-      - name: Add module path to sys.path
-        run: |
-                python -c "import sys; import os; sys.path.append(os.getcwd())"     
+          # - name: Add module path to sys.path
+        # run: |
+                #      python -c "import sys; import os; sys.path.append(os.getcwd())"     
       - name: Test with pytest
         run: |
           pytest --cov=autospark --cov-branch --cov-report term-missing --cov-report xml \
