@@ -73,10 +73,6 @@ jobs:
         run: |
           git config --global user.name "SuperAGI-Bot"
           git config --global user.email "github-bot@superagi.com"
-            # add python access path
-      - name: Set Python Import Path
-        run: |
-              export PYTHONPATH=$PYTHONPATH:"/home/AutoSpark"
       - name: Set up Python 3.9
         uses: actions/setup-python@v3
         with:
