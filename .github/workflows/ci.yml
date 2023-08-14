@@ -91,7 +91,7 @@ jobs:
                 python -c "import sys; import os; sys.path.append(os.getcwd())"     
       - name: Test with pytest
         run: |
-
+          pytest --cov=autospark --cov-branch --cov-report term-missing --cov-report xml \
             tests/unit_tests -s
         env:
           CI: true
