@@ -19,10 +19,35 @@ TOOLS:
 3. 你只能生成一个待执行命令名称及其对应参数
 4. 你生成的命令必须是用来解决 `{current_task}`
 
-在之后的每次回答中，你必须严格遵从上述约束条件并按照如下格式返回响应:
+在之后的每次回答中，你必须严格遵从上述约束条件并按照如下JsonSchema约束返回响应:
 
-原因: <为什么这么做？>
-计划: <计划如何做?>
-命令名称: <从命令中选择的一个命令英文名称,必须取上述name字段>
-命令参数: <参数1key>:<参数2value>; <参数2key>:<参数2value>
-注意: <模型提示需要注意事项>
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "properties": {
+        "thoughts": {
+            "type": "object",
+            "properties": {
+                "reasoning": {
+                    "type": "string",
+                    "description": "short reasoning",
+                }
+            },
+            "required": ["reasoning"]
+        },
+        "tool": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "description": "tool name",
+                },
+                "args": {
+                    "type": "object",
+                    "description": "tool arguments",
+                }
+            },
+            "required": ["name", "args"]
+        }
+    }
+}
