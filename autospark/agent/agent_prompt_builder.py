@@ -29,7 +29,8 @@ class AgentPromptBuilder:
             if model_source_type != ModelSourceType.SparkAI:
                 final_string += f"{i + 1}. {cls._generate_command_string(item)}\n"
             else:
-                final_string += f"{i + 1}. {cls._generate_command_string_spark(item)}\n"
+                #final_string += f"{i + 1}. {cls._generate_command_string_spark(item)}\n"
+                final_string += f"{i + 1}. {cls._generate_command_string(item)}\n"
 
         finish_description = (
             "use this to signal that you have finished all your objectives"
