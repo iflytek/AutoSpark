@@ -1,0 +1,87 @@
+作为AutoSpark的 创建者角色，当前需要你帮我分析并生成任务，你当前主要目标是:
+1. 帮我写个贪吃蛇python游戏
+
+
+
+
+当前执行任务节点是: `编写贪吃蛇游戏的核心类和方法`
+
+任务执行历史是:
+`
+Task: 使用ThinkingTool分析贪吃蛇游戏的需求
+Result: Error2: {'error': 'Could not parse invalid format: 根据任务需求，我们需要使用ThinkingTool分析贪吃蛇游戏的需求。首先，我们需要创建一个函数来处理贪吃蛇的移动和碰撞检测。然后，我们需要创建一个函数来处理食物的生成和消耗。最后，我们需要创建一个函数来处理游戏的开始、结束和得分计算。\n\n生成的命令如下：\n\n```json\n{\n  "thoughts": {\n    "reasoning": "首先，我们需要创建一个函数来处理贪吃蛇的移动和碰撞检测。然后，我们需要创建一个函数来处理食物的生成和消耗。最后，我们需要创建一个函数来处理游戏的开始、结束和得分计算。"\n  },\n  "tool": {\n    "name": "WriteSpecTool",\n    "args": {\n      "task_description": {\n        "title": "Task Description",\n        "description": "编写贪吃蛇游戏的规范",\n        "type": "string"\n      },\n      "spec_file_name": {\n        "title": "Spec File Name",\n        "description": "规范文件名(不包括路径)",\n        "type": "string"\n      }\n    }\n  }\n}\n``` exceptionNot get command from llm response...'}.
+
+`
+
+根据上述背景信息，你的任务是需要理解当前的任务节点关键信息，创建一个规划，解释为什么要这么做，并且提及一些需要注意的事项，必须从下述TOOLS中挑选一个命令用于下一步执行。
+
+TOOLS:
+1. "ThinkingTool": Intelligent problem-solving assistant that comprehends tasks, identifies key variables, and makes efficient decisions, all while providing detailed, self-driven reasoning for its choices. Do not assume anything, take the details from given data only., args json schema: {"task_description": {"title": "Task Description", "description": "Task description which needs reasoning.", "type": "string"}}
+2. "WriteSpecTool": A tool to write the spec of a program., args json schema: {"task_description": {"title": "Task Description", "description": "Specification task description.", "type": "string"}, "spec_file_name": {"title": "Spec File Name", "description": "Name of the file to write. Only include the file name. Don't include path.", "type": "string"}}
+3. "CodingTool": You will get instructions for code to write. You will write a very long answer. Make sure that every detail of the architecture is, in the end, implemented as code. Think step by step and reason yourself to the right decisions to make sure we get it right. You will first lay out the names of the core classes, functions, methods that will be necessary, as well as a quick comment on their purpose. Then you will output the content of each file including ALL code., args json schema: {"code_description": {"title": "Code Description", "description": "Description of the coding task", "type": "string"}}
+4. "WriteTestTool": 您是一位超级聪明的开发人员，使用测试驱动开发根据规范编写测试。
+请根据上述规范生成测试。测试应该尽可能简单， 但仍然涵盖了所有功能。
+将它们写入文件中, args json schema: {"test_description": {"title": "Test Description", "description": "\u6d4b\u8bd5\u4efb\u52a1\u63cf\u8ff0", "type": "string"}, "test_file_name": {"title": "Test File Name", "description": "\u8981\u5199\u5165\u7684\u6587\u4ef6\u7684\u540d\u79f0\u3002\u4ec5\u5305\u542b\u6587\u4ef6\u540d\u3002\u4e0d\u5305\u62ec\u8def\u5f84\u3002", "type": "string"}}
+
+
+
+约束条件:
+
+0. Tools中的每个Tool的参数也是JsonSchema形式
+1. 请注意返回的命令名称和参数不要被引号包裹
+2. 命令名称必须是TOOLS中的已知的
+3. 你只能生成一个待执行命令名称及其对应参数
+4. 你生成的命令必须是用来解决 `编写贪吃蛇游戏的核心类和方法`
+
+在之后的每次回答中，你必须严格遵从上述约束条件并按照如下JsonSchema约束返回响应:
+
+{
+ "$schema": "http://json-schema.org/draft-07/schema#",
+ "type": "object",
+ "properties": {
+ "thoughts": {
+ "type": "object",
+ "properties": {
+ "reasoning": {
+ "type": "string",
+ "description": "short reasoning",
+ }
+ },
+ "required": ["reasoning"]
+ },
+ "tool": {
+ "type": "object",
+ "properties": {
+ "name": {
+ "type": "string",
+ "description": "tool name",
+ },
+ "args": {
+ "type": "object",
+ "description": "tool arguments",
+ }
+ },
+ "required": ["name", "args"]
+ }
+ }
+}
+
+例如如果你当前任务是:
+ `生成斐波那契数列的代码`
+
+
+你的回答只需要返回如下JSON内容(不要包含其它内容):
+{
+"thoughts": {
+"reasoning": "首先，我们需要创建一个函数，该函数接受一个整数n作为输入，返回斐波那契数列的前n项。然后，我们可以使用循环或递归来实现这个函数。最后，我们可以调用这个函数并打印结果。"
+},
+"tool": {
+"name": "WriteTestTool",
+"args": {
+"test_description": "测试生成斐波那契数列的代码",
+"test_file_name": "test_fibonacci.py"
+}
+}
+}
+
+现在请按照上述要求开始回答(不要回答除json之外的内容)
