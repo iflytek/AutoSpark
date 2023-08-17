@@ -63,7 +63,8 @@ class AgentSchemaOutputParser(BaseOutputParser):
                     args[k] = v['description']
                 else:
                     args[k] = ''
-        return json.dumps(args)
+        js.get("tool")['args'] =args
+        return json.dumps(js)
 
     def parse(self, response: str) -> AgentGPTAction:
         if response.startswith("```") and response.endswith("```"):
@@ -74,13 +75,14 @@ class AgentSchemaOutputParser(BaseOutputParser):
         response = self.fix_json_according_schema(response, "")
         # OpenAI returns `str(content_dict)`, literal_eval reverses this
         try:
-            logger.debug("AgentSchemaOutputParser: ", response)
+            logger.debug("AgentSchemaOutputParser: %s" % response)
             response_obj = ast.literal_eval(response)
             return AgentGPTAction(
                 name=response_obj['tool']['name'],
                 args=response_obj['tool']['args'],
             )
         except BaseException as e:
+            logger.debug("Fallback to  SparkFormat Parser %s"%str(e))
             try:
                 response_obj = SparkResultParser.parse(response)
             except Exception as e:
