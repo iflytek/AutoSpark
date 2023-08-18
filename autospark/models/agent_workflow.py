@@ -21,6 +21,8 @@ class AgentWorkflow(DBBaseModel):
     id = Column(Integer, primary_key=True)
     name = Column(String)
     description = Column(Text)
+    # 用户级的workflow定制
+    user_id = Column(Integer)
 
     def __repr__(self):
         """
