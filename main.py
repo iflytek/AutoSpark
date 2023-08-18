@@ -29,6 +29,8 @@ from autospark.controllers.agent_execution_feed import router as agent_execution
 from autospark.controllers.agent_execution_permission import router as agent_execution_permission_router
 from autospark.controllers.agent_template import router as agent_template_router
 from autospark.controllers.agent_workflow import router as agent_workflow_router
+from autospark.controllers.agent_workflow_step import router as agent_workflow_step_router
+
 from autospark.controllers.budget import router as budget_router
 from autospark.controllers.config import router as config_router
 from autospark.controllers.organisation import router as organisation_router
@@ -112,6 +114,7 @@ app.include_router(tool_config_router, prefix="/tool_configs")
 app.include_router(config_router, prefix="/configs")
 app.include_router(agent_template_router, prefix="/agent_templates")
 app.include_router(agent_workflow_router, prefix="/agent_workflows")
+app.include_router(agent_workflow_step_router, prefix="/agent_workflow_steps/")
 app.include_router(twitter_oauth_router, prefix="/twitter")
 app.include_router(agent_execution_config, prefix="/agent_executions_configs")
 app.include_router(analytics_router, prefix="/analytics")
