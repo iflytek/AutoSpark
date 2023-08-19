@@ -96,6 +96,7 @@ app.add_middleware(
 # DBBaseModel.metadata.create_all(bind=engine, checkfirst=True)
 # DBBaseModel.metadata.drop_all(bind=engine,checkfirst=True)
 
+# jwt  docs 加锁配置 https://github.com/IndominusByte/fastapi-jwt-auth/issues/34
 
 app.include_router(user_router, prefix="/users")
 app.include_router(tool_router, prefix="/tools")
@@ -114,7 +115,7 @@ app.include_router(tool_config_router, prefix="/tool_configs")
 app.include_router(config_router, prefix="/configs")
 app.include_router(agent_template_router, prefix="/agent_templates")
 app.include_router(agent_workflow_router, prefix="/agent_workflows")
-app.include_router(agent_workflow_step_router, prefix="/agent_workflow_steps/")
+app.include_router(agent_workflow_step_router, prefix="/agent_workflow_steps")
 app.include_router(twitter_oauth_router, prefix="/twitter")
 app.include_router(agent_execution_config, prefix="/agent_executions_configs")
 app.include_router(analytics_router, prefix="/analytics")
@@ -495,10 +496,10 @@ def github_auth_handler(code: str = Query(...), Authorize: AuthJWT = Depends()):
             redirect_url_success = f"{frontend_url}?access_token={jwt_token}"
             return RedirectResponse(url=redirect_url_success)
         else:
-            redirect_url_failure = "https://superagi.com/"
+            redirect_url_failure = "https://autospark.model.xfyun.com/"
             return RedirectResponse(url=redirect_url_failure)
     else:
-        redirect_url_failure = "https://superagi.com/"
+        redirect_url_failure = "https://autospark.model.xfyun.com/"
         return RedirectResponse(url=redirect_url_failure)
 
 

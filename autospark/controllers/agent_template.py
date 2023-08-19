@@ -2,6 +2,7 @@ from datetime import datetime
 
 from fastapi import APIRouter
 from fastapi import HTTPException, Depends
+from fastapi.security import HTTPBearer
 from fastapi_sqlalchemy import db
 from pydantic import BaseModel
 
@@ -42,7 +43,7 @@ class AgentTemplateIn(BaseModel):
     class Config:
         orm_mode = True
 
-@router.post("/create", status_code=201, response_model=AgentTemplateOut)
+@router.post("/create", status_code=201,dependencies=[Depends(HTTPBearer())], response_model=AgentTemplateOut)
 def create_agent_template(agent_template: AgentTemplateIn,
                           organisation=Depends(get_user_organisation)):
     """
@@ -73,7 +74,7 @@ def create_agent_template(agent_template: AgentTemplateIn,
     return db_agent_template
 
 
-@router.get("/get/{agent_template_id}")
+@router.get("/get/{agent_template_id}",dependencies=[Depends(HTTPBearer())])
 def get_agent_template(template_source, agent_template_id: int, organisation=Depends(get_user_organisation)):
     """
         Get the details of a specific agent template.
@@ -108,7 +109,7 @@ def get_agent_template(template_source, agent_template_id: int, organisation=Dep
     return template
 
 
-@router.post("/update_details/{agent_template_id}", response_model=AgentTemplateOut)
+@router.post("/update_details/{agent_template_id}",dependencies=[Depends(HTTPBearer())], response_model=AgentTemplateOut)
 def update_agent_template(agent_template_id: int,
                           agent_configs: dict,
                           organisation=Depends(get_user_organisation)):
@@ -145,7 +146,7 @@ def update_agent_template(agent_template_id: int,
     return db_agent_template
 
 
-@router.post("/save_agent_as_template/{agent_id}")
+@router.post("/save_agent_as_template/{agent_id}",dependencies=[Depends(HTTPBearer())])
 def save_agent_as_template(agent_id: str,
                            organisation=Depends(get_user_organisation)):
     """
@@ -188,7 +189,7 @@ def save_agent_as_template(agent_id: str,
     return agent_template.to_dict()
 
 
-@router.get("/list")
+@router.get("/list",dependencies=[Depends(HTTPBearer())])
 def list_agent_templates(template_source="local", search_str="", page=0, organisation=Depends(get_user_organisation)):
     """
         List agent templates.
@@ -225,7 +226,7 @@ def list_agent_templates(template_source="local", search_str="", page=0, organis
     return output_json
 
 
-@router.get("/marketplace/list")
+@router.get("/marketplace/list",dependencies=[Depends(HTTPBearer())])
 def list_marketplace_templates(page=0):
     """
     Get all marketplace agent templates.
@@ -249,7 +250,7 @@ def list_marketplace_templates(page=0):
     return output_json
 
 
-@router.get("/marketplace/template_details/{agent_template_id}")
+@router.get("/marketplace/template_details/{agent_template_id}",dependencies=[Depends(HTTPBearer())])
 def marketplace_template_detail(agent_template_id):
     """
     Get marketplace template details.
@@ -284,7 +285,7 @@ def marketplace_template_detail(agent_template_id):
     return output_json
 
 
-@router.post("/download", status_code=201)
+@router.post("/download", status_code=201,dependencies=[Depends(HTTPBearer())])
 def download_template(agent_template_id: int,
                       organisation=Depends(get_user_organisation)):
     """
@@ -301,7 +302,7 @@ def download_template(agent_template_id: int,
     return template.to_dict()
 
 
-@router.get("/agent_config", status_code=201)
+@router.get("/agent_config", dependencies=[Depends(HTTPBearer())],status_code=201)
 def fetch_agent_config_from_template(agent_template_id: int,
                                      organisation=Depends(get_user_organisation)):
     """

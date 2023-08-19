@@ -1,5 +1,6 @@
 from fastapi import APIRouter, HTTPException
 from fastapi import Depends
+from fastapi.security import HTTPBearer
 from fastapi_sqlalchemy import db
 from datetime import datetime
 
@@ -35,7 +36,7 @@ class AgentWorkflowIn(BaseModel):
         orm_mode = True
 
 
-@router.get("/list", status_code=201)
+@router.get("/list", dependencies=[Depends(HTTPBearer())],status_code=201)
 def list_workflows(organisation=Depends(get_user_organisation), user=Depends(get_current_user)):
     """
     Lists agent workflows.
@@ -56,7 +57,7 @@ def list_workflows(organisation=Depends(get_user_organisation), user=Depends(get
     return output_json
 
 
-@router.post("/create", status_code=201, response_model=AgentWorkflowOut)
+@router.post("/create", status_code=201,dependencies=[Depends(HTTPBearer())], response_model=AgentWorkflowOut)
 def create_workflow(workflow_template: AgentWorkflowIn, user=Depends(get_current_user)):
     """
 
@@ -76,7 +77,7 @@ def create_workflow(workflow_template: AgentWorkflowIn, user=Depends(get_current
     return wf
 
 
-@router.put("/update/{workflow_id}", status_code=201, response_model=AgentWorkflowOut)
+@router.put("/update/{workflow_id}", dependencies=[Depends(HTTPBearer())],status_code=201, response_model=AgentWorkflowOut)
 def update_workflow(workflow_id: int, workflow_template: AgentWorkflowIn, user=Depends(get_current_user)):
     """
 
@@ -102,7 +103,7 @@ def update_workflow(workflow_id: int, workflow_template: AgentWorkflowIn, user=D
     return workflow
 
 
-@router.delete("/{workflow_id}", status_code=201)
+@router.delete("/{workflow_id}",dependencies=[Depends(HTTPBearer())], status_code=201)
 def delete_workflow(workflow_id: int, user=Depends(get_current_user)):
     """
 

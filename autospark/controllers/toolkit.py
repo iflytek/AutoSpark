@@ -3,6 +3,7 @@ from typing import Optional
 import requests
 from fastapi import APIRouter, Body
 from fastapi import HTTPException, Depends, Query
+from fastapi.security import HTTPBearer
 from fastapi_sqlalchemy import db
 from autospark.config.config import get_config
 from autospark.helper.auth import get_user_organisation
@@ -21,7 +22,7 @@ router = APIRouter()
 
 
 #For internal use
-@router.get("/marketplace/list/{page}")
+@router.get("/marketplace/list/{page}",dependencies=[Depends(HTTPBearer())])
 def get_marketplace_toolkits(
         page: int = 0,
 ):
@@ -52,7 +53,7 @@ def get_marketplace_toolkits(
     return toolkits
 
 #For internal use
-@router.get("/marketplace/details/{toolkit_name}")
+@router.get("/marketplace/details/{toolkit_name}",dependencies=[Depends(HTTPBearer())])
 def get_marketplace_toolkit_detail(toolkit_name: str):
     """
     Get tool kit details from the marketplace.
@@ -70,7 +71,7 @@ def get_marketplace_toolkit_detail(toolkit_name: str):
     return toolkit
 
 #For internal use
-@router.get("/marketplace/readme/{toolkit_name}")
+@router.get("/marketplace/readme/{toolkit_name}",dependencies=[Depends(HTTPBearer())])
 def get_marketplace_toolkit_readme(toolkit_name: str):
     """
     Get tool kit readme from the marketplace.
@@ -118,7 +119,7 @@ def get_marketplace_toolkit_tools(toolkit_name: str):
     return tools
 
 
-@router.get("/get/install/{toolkit_name}")
+@router.get("/get/install/{toolkit_name}",dependencies=[Depends(HTTPBearer())])
 def install_toolkit_from_marketplace(toolkit_name: str,
                                      organisation: Organisation = Depends(get_user_organisation)):
     """
@@ -144,7 +145,7 @@ def install_toolkit_from_marketplace(toolkit_name: str,
     return {"message": "ToolKit installed successfully"}
 
 
-@router.get("/get/toolkit_name/{toolkit_name}")
+@router.get("/get/toolkit_name/{toolkit_name}",dependencies=[Depends(HTTPBearer())])
 def get_installed_toolkit_details(toolkit_name: str,
                                   organisation: Organisation = Depends(get_user_organisation)):
     """
@@ -178,7 +179,7 @@ def get_installed_toolkit_details(toolkit_name: str,
     return toolkit
 
 
-@router.post("/get/local/install", status_code=200)
+@router.post("/get/local/install", dependencies=[Depends(HTTPBearer())],status_code=200)
 def download_and_install_tool(github_link_request: GitHubLinkRequest = Body(...),
                               organisation: Organisation = Depends(get_user_organisation)):
     """
@@ -204,7 +205,7 @@ def download_and_install_tool(github_link_request: GitHubLinkRequest = Body(...)
     add_tool_to_json(github_link)
 
 
-@router.get("/get/readme/{toolkit_name}")
+@router.get("/get/readme/{toolkit_name}",dependencies=[Depends(HTTPBearer())])
 def get_installed_toolkit_readme(toolkit_name: str, organisation: Organisation = Depends(get_user_organisation)):
     """
     Get the readme content of a toolkit.
@@ -229,7 +230,7 @@ def get_installed_toolkit_readme(toolkit_name: str, organisation: Organisation =
     return readme_content
 
 # Following APIs will be used to get marketplace related information
-@router.get("/get")
+@router.get("/get",dependencies=[Depends(HTTPBearer())])
 def handle_marketplace_operations(
         search_str: str = Query(None, title="Search String"),
         toolkit_name: str = Query(None, title="Tool Kit Name")
@@ -249,7 +250,7 @@ def handle_marketplace_operations(
     return response
 
 
-@router.get("/get/list")
+@router.get("/get/list",dependencies=[Depends(HTTPBearer())])
 def handle_marketplace_operations_list(
         page: int = Query(None, title="Page Number"),
         organisation: Organisation = Depends(get_user_organisation)
@@ -271,7 +272,7 @@ def handle_marketplace_operations_list(
     return marketplace_toolkits_with_install
 
 
-@router.get("/get/local/list")
+@router.get("/get/local/list",dependencies=[Depends(HTTPBearer())])
 def get_installed_toolkit_list(organisation: Organisation = Depends(get_user_organisation)):
     """
     Get the list of installed tool kits.

@@ -1,5 +1,6 @@
 from datetime import datetime
 from typing import Optional
+from fastapi.security import HTTPBearer
 
 from fastapi import APIRouter
 from fastapi import HTTPException, Depends
@@ -49,7 +50,7 @@ class AgentExecutionFeedIn(BaseModel):
         orm_mode = True
 
 # CRUD Operations
-@router.post("/add", response_model=AgentExecutionFeedOut, status_code=201)
+@router.post("/add", response_model=AgentExecutionFeedOut,dependencies=[Depends(HTTPBearer())], status_code=201)
 def create_agent_execution_feed(agent_execution_feed: AgentExecutionFeedIn,
                                 Authorize: AuthJWT = Depends(check_auth)):
     """
@@ -78,7 +79,7 @@ def create_agent_execution_feed(agent_execution_feed: AgentExecutionFeedIn,
     return db_agent_execution_feed
 
 
-@router.get("/get/{agent_execution_feed_id}", response_model=AgentExecutionFeedOut)
+@router.get("/get/{agent_execution_feed_id}", dependencies=[Depends(HTTPBearer())],response_model=AgentExecutionFeedOut)
 def get_agent_execution_feed(agent_execution_feed_id: int,
                              Authorize: AuthJWT = Depends(check_auth)):
     """
@@ -101,7 +102,7 @@ def get_agent_execution_feed(agent_execution_feed_id: int,
     return db_agent_execution_feed
 
 
-@router.put("/update/{agent_execution_feed_id}", response_model=AgentExecutionFeedOut)
+@router.put("/update/{agent_execution_feed_id}",dependencies=[Depends(HTTPBearer())], response_model=AgentExecutionFeedOut)
 def update_agent_execution_feed(agent_execution_feed_id: int,
                                 agent_execution_feed: AgentExecutionFeedIn,
                                 Authorize: AuthJWT = Depends(check_auth)):

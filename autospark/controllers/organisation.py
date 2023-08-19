@@ -2,6 +2,7 @@ from datetime import datetime
 
 from fastapi import APIRouter
 from fastapi import HTTPException, Depends
+from fastapi.security import HTTPBearer
 from fastapi_jwt_auth import AuthJWT
 from fastapi_sqlalchemy import db
 from pydantic import BaseModel
@@ -44,7 +45,7 @@ class OrganisationIn(BaseModel):
 
 
 # CRUD Operations
-@router.post("/add", response_model=OrganisationOut, status_code=201)
+@router.post("/add", dependencies=[Depends(HTTPBearer())],response_model=OrganisationOut, status_code=201)
 def create_organisation(organisation: OrganisationIn,
                         Authorize: AuthJWT = Depends(check_auth)):
     """
@@ -74,7 +75,7 @@ def create_organisation(organisation: OrganisationIn,
     return new_organisation
 
 
-@router.get("/get/{organisation_id}", response_model=OrganisationOut)
+@router.get("/get/{organisation_id}",dependencies=[Depends(HTTPBearer())], response_model=OrganisationOut)
 def get_organisation(organisation_id: int, Authorize: AuthJWT = Depends(check_auth)):
     """
     Get organisation details by organisation_id.
@@ -96,7 +97,7 @@ def get_organisation(organisation_id: int, Authorize: AuthJWT = Depends(check_au
     return db_organisation
 
 
-@router.put("/update/{organisation_id}", response_model=OrganisationOut)
+@router.put("/update/{organisation_id}",dependencies=[Depends(HTTPBearer())], response_model=OrganisationOut)
 def update_organisation(organisation_id: int, organisation: OrganisationIn,
                         Authorize: AuthJWT = Depends(check_auth)):
     """
@@ -125,7 +126,7 @@ def update_organisation(organisation_id: int, organisation: OrganisationIn,
     return db_organisation
 
 
-@router.get("/get/user/{user_id}", response_model=OrganisationOut, status_code=201)
+@router.get("/get/user/{user_id}",dependencies=[Depends(HTTPBearer())], response_model=OrganisationOut, status_code=201)
 def get_organisations_by_user(user_id: int):
     """
     Get organisations associated with a user.If Organisation does not exists a new organisation is created

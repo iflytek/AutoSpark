@@ -2,6 +2,7 @@ from typing import Union, List
 
 from fastapi import APIRouter
 from fastapi import HTTPException, Depends
+from fastapi.security import HTTPBearer
 from fastapi_jwt_auth import AuthJWT
 from fastapi_sqlalchemy import db
 from pydantic import BaseModel
@@ -39,7 +40,7 @@ class AgentConfigurationIn(BaseModel):
 
 
 # CRUD Operations
-@router.post("/add", response_model=AgentConfigurationOut, status_code=201)
+@router.post("/add", dependencies=[Depends(HTTPBearer())],response_model=AgentConfigurationOut, status_code=201)
 def create_agent_config(agent_config: AgentConfigurationIn,
                         Authorize: AuthJWT = Depends(check_auth)):
     """
@@ -92,7 +93,7 @@ def get_agent(agent_config_id: int,
         raise HTTPException(status_code=404, detail="Agent Configuration not found")
 
 
-@router.put("/update", response_model=AgentConfigurationOut)
+@router.put("/update",dependencies=[Depends(HTTPBearer())], response_model=AgentConfigurationOut)
 def update_agent(agent_config: AgentConfigurationIn,
                  Authorize: AuthJWT = Depends(check_auth)):
     """
@@ -124,7 +125,7 @@ def update_agent(agent_config: AgentConfigurationIn,
     return db_agent_config
 
 
-@router.get("/get/agent/{agent_id}")
+@router.get("/get/agent/{agent_id}",dependencies=[Depends(HTTPBearer())],)
 def get_agent_configurations(agent_id: int,
                              Authorize: AuthJWT = Depends(check_auth)):
     """

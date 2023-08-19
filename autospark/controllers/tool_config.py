@@ -1,4 +1,5 @@
 from fastapi import APIRouter, HTTPException, Depends
+from fastapi.security import HTTPBearer
 from fastapi_jwt_auth import AuthJWT
 from fastapi_sqlalchemy import db
 from pydantic import BaseModel
@@ -20,7 +21,7 @@ class ToolConfigOut(BaseModel):
     class Config:
         orm_mode = True
 
-@router.post("/add/{toolkit_name}", status_code=201)
+@router.post("/add/{toolkit_name}", dependencies=[Depends(HTTPBearer())],status_code=201)
 def update_tool_config(toolkit_name: str, configs: list, organisation: Organisation = Depends(get_user_organisation)):
     """
     Update tool configurations for a specific tool kit.
@@ -64,7 +65,7 @@ def update_tool_config(toolkit_name: str, configs: list, organisation: Organisat
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/create-or-update/{toolkit_name}", status_code=201, response_model=ToolConfigOut)
+@router.post("/create-or-update/{toolkit_name}", dependencies=[Depends(HTTPBearer())],status_code=201, response_model=ToolConfigOut)
 def create_or_update_tool_config(toolkit_name: str, tool_configs,
                                  Authorize: AuthJWT = Depends(check_auth)):
     """
@@ -106,7 +107,7 @@ def create_or_update_tool_config(toolkit_name: str, tool_configs,
     return toolkit
 
 
-@router.get("/get/toolkit/{toolkit_name}", status_code=200)
+@router.get("/get/toolkit/{toolkit_name}", dependencies=[Depends(HTTPBearer())],status_code=200)
 def get_all_tool_configs(toolkit_name: str, organisation: Organisation = Depends(get_user_organisation)):
     """
     Get all tool configurations by Tool Kit Name.
@@ -132,7 +133,7 @@ def get_all_tool_configs(toolkit_name: str, organisation: Organisation = Depends
     return tool_configs
 
 
-@router.get("/get/toolkit/{toolkit_name}/key/{key}", status_code=200)
+@router.get("/get/toolkit/{toolkit_name}/key/{key}", dependencies=[Depends(HTTPBearer())],status_code=200)
 def get_tool_config(toolkit_name: str, key: str, organisation: Organisation = Depends(get_user_organisation)):
     """
     Get a specific tool configuration by tool kit name and key.

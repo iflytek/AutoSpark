@@ -1,6 +1,7 @@
 from datetime import datetime
 from typing import Optional
 
+from fastapi.security import HTTPBearer
 from fastapi_sqlalchemy import db
 from fastapi import HTTPException, Depends, Request
 from fastapi_jwt_auth import AuthJWT
@@ -43,7 +44,7 @@ class UserIn(UserBase):
         orm_mode = True
 
 # CRUD Operations
-@router.post("/add", response_model=UserOut, status_code=201)
+@router.post("/add", response_model=UserOut, dependencies=[Depends(HTTPBearer())],status_code=201)
 def create_user(user: UserIn,
                 Authorize: AuthJWT = Depends(check_auth)):
     """
@@ -97,7 +98,7 @@ def get_user(user_id: int,
     return db_user
 
 
-@router.put("/update/{user_id}", response_model=UserOut)
+@router.put("/update/{user_id}",dependencies=[Depends(HTTPBearer())], response_model=UserOut)
 def update_user(user_id: int,
                 user: UserBase,
                 Authorize: AuthJWT = Depends(check_auth)):

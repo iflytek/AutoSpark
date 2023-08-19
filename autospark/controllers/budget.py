@@ -1,5 +1,6 @@
 from fastapi import APIRouter
 from fastapi import HTTPException, Depends
+from fastapi.security import HTTPBearer
 from fastapi_jwt_auth import AuthJWT
 from fastapi_sqlalchemy import db
 from pydantic import BaseModel
@@ -51,7 +52,7 @@ def create_budget(budget: BudgetIn,
     return new_budget
 
 
-@router.get("/get/{budget_id}", response_model=BudgetOut)
+@router.get("/get/{budget_id}",dependencies=[Depends(HTTPBearer())], response_model=BudgetOut)
 def get_budget(budget_id: int,
                Authorize: AuthJWT = Depends(check_auth)):
     """
@@ -71,7 +72,7 @@ def get_budget(budget_id: int,
     return db_budget
 
 
-@router.put("/update/{budget_id}", response_model=BudgetOut)
+@router.put("/update/{budget_id}", dependencies=[Depends(HTTPBearer())],response_model=BudgetOut)
 def update_budget(budget_id: int, budget: BudgetIn,
                   Authorize: AuthJWT = Depends(check_auth)):
     """

@@ -8,6 +8,7 @@ from fastapi import APIRouter
 from fastapi import File, Form, UploadFile
 from fastapi import HTTPException, Depends
 from fastapi.responses import StreamingResponse
+from fastapi.security import HTTPBearer
 from fastapi_jwt_auth import AuthJWT
 from fastapi_sqlalchemy import db
 
@@ -29,7 +30,7 @@ s3 = boto3.client(
 )
 
 
-@router.post("/add/{agent_id}", status_code=201)
+@router.post("/add/{agent_id}",dependencies=[Depends(HTTPBearer())], status_code=201)
 async def upload(agent_id: int, file: UploadFile = File(...), name=Form(...), size=Form(...), type=Form(...),
                  Authorize: AuthJWT = Depends(check_auth)):
     """
@@ -97,7 +98,7 @@ async def upload(agent_id: int, file: UploadFile = File(...), name=Form(...), si
     return resource
 
 
-@router.get("/get/all/{agent_id}", status_code=200)
+@router.get("/get/all/{agent_id}", dependencies=[Depends(HTTPBearer())],status_code=200)
 def get_all_resources(agent_id: int,
                       Authorize: AuthJWT = Depends(check_auth)):
     """
@@ -115,7 +116,7 @@ def get_all_resources(agent_id: int,
     return resources
 
 
-@router.get("/get/{resource_id}", status_code=200)
+@router.get("/get/{resource_id}",dependencies=[Depends(HTTPBearer())], status_code=200)
 def download_file_by_id(resource_id: int,
                         Authorize: AuthJWT = Depends(check_auth)):
     """

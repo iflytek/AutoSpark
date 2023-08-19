@@ -2,6 +2,7 @@ from datetime import datetime
 from typing import Optional
 
 from fastapi import APIRouter
+from fastapi.security import HTTPBearer
 from pydantic import BaseModel
 
 from autospark.models.configuration import Configuration
@@ -41,7 +42,7 @@ class ConfigurationIn(BaseModel):
 
 
 # CRUD Operations
-@router.post("/add/organisation/{organisation_id}", status_code=201,
+@router.post("/add/organisation/{organisation_id}",dependencies=[Depends(HTTPBearer())], status_code=201,
              response_model=ConfigurationOut)
 def create_config(config: ConfigurationIn, organisation_id: int,
                   Authorize: AuthJWT = Depends(check_auth)):
@@ -94,7 +95,7 @@ def create_config(config: ConfigurationIn, organisation_id: int,
     return new_config
 
 
-@router.get("/get/organisation/{organisation_id}/key/{key}", status_code=200)
+@router.get("/get/organisation/{organisation_id}/key/{key}", dependencies=[Depends(HTTPBearer())],status_code=200)
 def get_config_by_organisation_id_and_key(organisation_id: int, key: str,
                                           Authorize: AuthJWT = Depends(check_auth)):
     """
@@ -137,7 +138,7 @@ def get_config_by_organisation_id_and_key(organisation_id: int, key: str,
     return config
 
 
-@router.get("/get/organisation/{organisation_id}", status_code=201)
+@router.get("/get/organisation/{organisation_id}", dependencies=[Depends(HTTPBearer())],status_code=201)
 def get_config_by_organisation_id(organisation_id: int,
                                   Authorize: AuthJWT = Depends(check_auth)):
     """

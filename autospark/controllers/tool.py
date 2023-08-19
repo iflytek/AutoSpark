@@ -3,6 +3,7 @@ from datetime import datetime
 from fastapi import APIRouter
 from fastapi import HTTPException, Depends
 from fastapi_jwt_auth import AuthJWT
+from fastapi.security import HTTPBearer
 from fastapi_sqlalchemy import db
 from pydantic import BaseModel
 
@@ -37,7 +38,7 @@ class ToolIn(BaseModel):
         orm_mode = True
 
 # CRUD Operations
-@router.post("/add", response_model=ToolOut, status_code=201)
+@router.post("/add", dependencies=[Depends(HTTPBearer())],response_model=ToolOut, status_code=201)
 def create_tool(
         tool: ToolIn,
         Authorize: AuthJWT = Depends(check_auth),
@@ -67,7 +68,7 @@ def create_tool(
     return db_tool
 
 
-@router.get("/get/{tool_id}", response_model=ToolOut)
+@router.get("/get/{tool_id}", dependencies=[Depends(HTTPBearer())],response_model=ToolOut)
 def get_tool(
         tool_id: int,
         Authorize: AuthJWT = Depends(check_auth),
@@ -92,7 +93,7 @@ def get_tool(
     return db_tool
 
 
-@router.get("/list")
+@router.get("/list",dependencies=[Depends(HTTPBearer())])
 def get_tools(
         organisation: Organisation = Depends(get_user_organisation)):
     """Get all tools"""
@@ -104,7 +105,7 @@ def get_tools(
     return tools
 
 
-@router.put("/update/{tool_id}", response_model=ToolOut)
+@router.put("/update/{tool_id}", dependencies=[Depends(HTTPBearer())],response_model=ToolOut)
 def update_tool(
         tool_id: int,
         tool: ToolIn,

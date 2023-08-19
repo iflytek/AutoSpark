@@ -3,6 +3,7 @@ from datetime import datetime
 
 from fastapi import APIRouter
 from fastapi import HTTPException, Depends
+from fastapi.security import HTTPBearer
 from fastapi_jwt_auth import AuthJWT
 from fastapi_sqlalchemy import db
 from pydantic import BaseModel
@@ -61,7 +62,7 @@ class AgentIn(BaseModel):
 
 
 # CRUD Operations
-@router.post("/add", response_model=AgentOut, status_code=201)
+@router.post("/add", response_model=AgentOut, dependencies=[Depends(HTTPBearer())],status_code=201)
 def create_agent(agent: AgentIn,
                  Authorize: AuthJWT = Depends(check_auth)):
     """
@@ -93,7 +94,7 @@ def create_agent(agent: AgentIn,
     return db_agent
 
 
-@router.get("/get/{agent_id}", response_model=AgentOut)
+@router.get("/get/{agent_id}",dependencies=[Depends(HTTPBearer())], response_model=AgentOut)
 def get_agent(agent_id: int,
               Authorize: AuthJWT = Depends(check_auth)):
     """
@@ -117,7 +118,7 @@ def get_agent(agent_id: int,
         raise HTTPException(status_code=404, detail="agent not found")
 
 
-@router.put("/update/{agent_id}", response_model=AgentOut)
+@router.put("/update/{agent_id}", dependencies=[Depends(HTTPBearer())],response_model=AgentOut)
 def update_agent(agent_id: int, agent: AgentIn,
                  Authorize: AuthJWT = Depends(check_auth)):
     """
@@ -155,7 +156,7 @@ def update_agent(agent_id: int, agent: AgentIn,
     return db_agent
 
 
-@router.post("/create", status_code=201)
+@router.post("/create", dependencies=[Depends(HTTPBearer())],status_code=201)
 def create_agent_with_config(agent_with_config: AgentConfigInput,
                              Authorize: AuthJWT = Depends(check_auth)):
     """
@@ -234,7 +235,7 @@ def create_agent_with_config(agent_with_config: AgentConfigInput,
         "contentType": "Agents"
     }
 
-@router.post("/schedule", status_code=201)
+@router.post("/schedule", dependencies=[Depends(HTTPBearer())],status_code=201)
 def create_and_schedule_agent(agent_config_schedule: AgentConfigSchedule,
                               Authorize: AuthJWT = Depends(check_auth)):
     """
@@ -293,7 +294,7 @@ def create_and_schedule_agent(agent_config_schedule: AgentConfigSchedule,
         "schedule_id": agent_schedule.id
     }
 
-@router.post("/stop/schedule", status_code=200)
+@router.post("/stop/schedule", dependencies=[Depends(HTTPBearer())],status_code=200)
 def stop_schedule(agent_id: int, Authorize: AuthJWT = Depends(check_auth)):
     """
     Stopping the scheduling for a given agent.
@@ -314,7 +315,7 @@ def stop_schedule(agent_id: int, Authorize: AuthJWT = Depends(check_auth)):
     db.session.commit()
 
 
-@router.put("/edit/schedule", status_code=200)
+@router.put("/edit/schedule", dependencies=[Depends(HTTPBearer())],status_code=200)
 def edit_schedule(schedule: AgentScheduleInput,
                   Authorize: AuthJWT = Depends(check_auth)):
     """
@@ -344,7 +345,7 @@ def edit_schedule(schedule: AgentScheduleInput,
     db.session.commit()
 
 
-@router.get("/get/schedule_data/{agent_id}")
+@router.get("/get/schedule_data/{agent_id}",dependencies=[Depends(HTTPBearer())])
 def get_schedule_data(agent_id: int, Authorize: AuthJWT = Depends(check_auth)):
     """
     Get the scheduling data for a given agent.
@@ -387,7 +388,7 @@ def get_schedule_data(agent_id: int, Authorize: AuthJWT = Depends(check_auth)):
     }
 
 
-@router.get("/get/project/{project_id}")
+@router.get("/get/project/{project_id}",dependencies=[Depends(HTTPBearer())])
 def get_agents_by_project_id(project_id: int,
                              Authorize: AuthJWT = Depends(check_auth)):
     """
@@ -437,7 +438,7 @@ def get_agents_by_project_id(project_id: int,
     return new_agents_sorted
 
 
-@router.get("/get/details/{agent_id}")
+@router.get("/get/details/{agent_id}",dependencies=[Depends(HTTPBearer())])
 def get_agent_configuration(agent_id: int,
                             Authorize: AuthJWT = Depends(check_auth)):
     """
@@ -488,7 +489,7 @@ def get_agent_configuration(agent_id: int,
     return response
 
 
-@router.put("/delete/{agent_id}", status_code=200)
+@router.put("/delete/{agent_id}",dependencies=[Depends(HTTPBearer())], status_code=200)
 def delete_agent(agent_id: int, Authorize: AuthJWT = Depends(check_auth)):
     """
         Delete an existing Agent

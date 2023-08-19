@@ -3,6 +3,7 @@ from fastapi import HTTPException, Depends
 
 from fastapi import APIRouter
 from fastapi import Depends
+from fastapi.security import HTTPBearer
 from fastapi_sqlalchemy import db
 from datetime import datetime
 
@@ -52,7 +53,7 @@ class AgentWorkflowStepIn(BaseModel):
         orm_mode = True
 
 
-@router.get("/list/{workflow_id}", status_code=201)
+@router.get("/list/{workflow_id}", dependencies=[Depends(HTTPBearer())],status_code=201)
 def list_workflow_steps(workflow_id: int, organisation=Depends(get_user_organisation), user=Depends(get_current_user)):
     """
     Lists agent workflow_steps.
@@ -73,7 +74,7 @@ def list_workflow_steps(workflow_id: int, organisation=Depends(get_user_organisa
     return output_json
 
 
-@router.post("/create", status_code=201, response_model=AgentWorkflowStepOut)
+@router.post("/create", status_code=201,dependencies=[Depends(HTTPBearer())], response_model=AgentWorkflowStepOut)
 def create_workflow_step(workflow_template: AgentWorkflowStepIn):
     """
 
@@ -106,7 +107,7 @@ def create_workflow_step(workflow_template: AgentWorkflowStepIn):
     return wf
 
 
-@router.put("/update/{workflow_step_id}", status_code=201, response_model=AgentWorkflowStepOut)
+@router.put("/update/{workflow_step_id}", dependencies=[Depends(HTTPBearer())],status_code=201, response_model=AgentWorkflowStepOut)
 def update_workflow_step(workflow_step_id: int, workflow_template: AgentWorkflowStepIn):
     workflowstep = db.session.query(AgentWorkflowStep).filter(AgentWorkflowStep.id == workflow_step_id).first()
     if not workflowstep:
@@ -124,7 +125,7 @@ def update_workflow_step(workflow_step_id: int, workflow_template: AgentWorkflow
     db.session.commit()
 
 
-@router.get("/get/{workflow_step_id}")
+@router.get("/get/{workflow_step_id}",dependencies=[Depends(HTTPBearer())],)
 def get_workflow_step(workflow_step_id: int):
     """
         Get the details of a specific workflow_step
@@ -145,7 +146,7 @@ def get_workflow_step(workflow_step_id: int):
     return wf
 
 
-@router.delete("/{workflow_step_id}", status_code=200)
+@router.delete("/{workflow_step_id}", dependencies=[Depends(HTTPBearer())],status_code=200)
 def delete_step(workflow_step_id: int, Authorize: AuthJWT = Depends(check_auth)):
     """
         Args:

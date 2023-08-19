@@ -1,3 +1,4 @@
+from fastapi.security import HTTPBearer
 from fastapi_sqlalchemy import db
 from fastapi import HTTPException, Depends
 from fastapi_jwt_auth import AuthJWT
@@ -32,7 +33,7 @@ class ProjectIn(BaseModel):
         orm_mode = True
 
 # CRUD Operations
-@router.post("/add", response_model=ProjectOut, status_code=201)
+@router.post("/add", dependencies=[Depends(HTTPBearer())],response_model=ProjectOut, status_code=201)
 def create_project(project: ProjectIn,
                    Authorize: AuthJWT = Depends(check_auth)):
     """
@@ -67,7 +68,7 @@ def create_project(project: ProjectIn,
     return project
 
 
-@router.get("/get/{project_id}", response_model=ProjectOut)
+@router.get("/get/{project_id}", dependencies=[Depends(HTTPBearer())],response_model=ProjectOut)
 def get_project(project_id: int, Authorize: AuthJWT = Depends(check_auth)):
     """
     Get project details by project_id.
@@ -124,7 +125,7 @@ def update_project(project_id: int, project: ProjectIn,
     return db_project
 
 
-@router.get("/get/organisation/{organisation_id}")
+@router.get("/get/organisation/{organisation_id}",dependencies=[Depends(HTTPBearer())])
 def get_projects_organisation(organisation_id: int,
                               Authorize: AuthJWT = Depends(check_auth)):
     """

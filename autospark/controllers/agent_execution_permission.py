@@ -1,6 +1,7 @@
 from datetime import datetime
 from typing import Annotated
 
+from fastapi.security import HTTPBearer
 from fastapi_sqlalchemy import db
 from fastapi import HTTPException, Depends, Body
 from fastapi_jwt_auth import AuthJWT
@@ -43,7 +44,7 @@ class AgentExecutionPermissionIn(BaseModel):
         orm_mode = True
 
 
-@router.get("/get/{agent_execution_permission_id}")
+@router.get("/get/{agent_execution_permission_id}",dependencies=[Depends(HTTPBearer())])
 def get_agent_execution_permission(agent_execution_permission_id: int,
                                    Authorize: AuthJWT = Depends(check_auth)):
     """
@@ -66,7 +67,7 @@ def get_agent_execution_permission(agent_execution_permission_id: int,
     return db_agent_execution_permission
 
 
-@router.post("/add", response_model=AgentExecutionPermissionOut)
+@router.post("/add", dependencies=[Depends(HTTPBearer())],response_model=AgentExecutionPermissionOut)
 def create_agent_execution_permission(
         agent_execution_permission: AgentExecutionPermissionIn
         , Authorize: AuthJWT = Depends(check_auth)):
@@ -86,7 +87,7 @@ def create_agent_execution_permission(
     return new_agent_execution_permission
 
 
-@router.patch("/update/{agent_execution_permission_id}",
+@router.patch("/update/{agent_execution_permission_id}",dependencies=[Depends(HTTPBearer())],
               response_model=AgentExecutionPermissionIn)
 def update_agent_execution_permission(agent_execution_permission_id: int,
                                       agent_execution_permission: AgentExecutionPermissionIn,
@@ -120,7 +121,7 @@ def update_agent_execution_permission(agent_execution_permission_id: int,
     return db_agent_execution_permission
 
 
-@router.put("/update/status/{agent_execution_permission_id}")
+@router.put("/update/status/{agent_execution_permission_id}",dependencies=[Depends(HTTPBearer())])
 def update_agent_execution_permission_status(agent_execution_permission_id: int,
                                              status: Annotated[bool, Body(embed=True)],
                                              user_feedback: Annotated[str, Body(embed=True)] = "",

@@ -1,5 +1,6 @@
 from datetime import datetime
 from typing import Optional
+from fastapi.security import HTTPBearer
 
 from fastapi_sqlalchemy import db
 from fastapi import HTTPException, Depends
@@ -57,7 +58,7 @@ class AgentExecutionIn(BaseModel):
         orm_mode = True
 
 # CRUD Operations
-@router.post("/add", response_model=AgentExecutionOut, status_code=201)
+@router.post("/add", dependencies=[Depends(HTTPBearer())],response_model=AgentExecutionOut, status_code=201)
 def create_agent_execution(agent_execution: AgentExecutionIn,
                            Authorize: AuthJWT = Depends(check_auth)):
     """
@@ -103,7 +104,7 @@ def create_agent_execution(agent_execution: AgentExecutionIn,
     return db_agent_execution
 
 
-@router.post("/schedule", status_code=201)
+@router.post("/schedule",dependencies=[Depends(HTTPBearer())], status_code=201)
 def schedule_existing_agent(agent_schedule: AgentScheduleInput,
                             Authorize: AuthJWT = Depends(check_auth)):
 
@@ -165,7 +166,7 @@ def schedule_existing_agent(agent_schedule: AgentScheduleInput,
     }
 
 
-@router.get("/get/{agent_execution_id}", response_model=AgentExecutionOut)
+@router.get("/get/{agent_execution_id}",dependencies=[Depends(HTTPBearer())], response_model=AgentExecutionOut)
 def get_agent_execution(agent_execution_id: int,
                         Authorize: AuthJWT = Depends(check_auth)):
     """
@@ -191,7 +192,7 @@ def get_agent_execution(agent_execution_id: int,
         raise HTTPException(status_code=404, detail="Agent execution not found")
 
 
-@router.put("/update/{agent_execution_id}", response_model=AgentExecutionOut)
+@router.put("/update/{agent_execution_id}", dependencies=[Depends(HTTPBearer())],response_model=AgentExecutionOut)
 def update_agent_execution(agent_execution_id: int,
                            agent_execution: AgentExecutionIn,
                            Authorize: AuthJWT = Depends(check_auth)):
@@ -228,7 +229,7 @@ def update_agent_execution(agent_execution_id: int,
     return db_agent_execution
 
 
-@router.get("/get/agents/status/{status}")
+@router.get("/get/agents/status/{status}",dependencies=[Depends(HTTPBearer())],)
 def agent_list_by_status(status: str,
                          Authorize: AuthJWT = Depends(check_auth)):
     """Get list of all agent_ids for a given status"""
@@ -239,7 +240,7 @@ def agent_list_by_status(status: str,
     return agent_ids
 
 
-@router.get("/get/agent/{agent_id}")
+@router.get("/get/agent/{agent_id}",dependencies=[Depends(HTTPBearer())])
 def list_running_agents(agent_id: str,
                         Authorize: AuthJWT = Depends(check_auth)):
     """Get all running state agents"""
@@ -251,7 +252,7 @@ def list_running_agents(agent_id: str,
     return executions
 
 
-@router.get("/get/latest/agent/project/{project_id}")
+@router.get("/get/latest/agent/project/{project_id}",dependencies=[Depends(HTTPBearer())])
 def get_agent_by_latest_execution(project_id: int,
                                   Authorize: AuthJWT = Depends(check_auth)):
     """Get latest executing agent details"""
