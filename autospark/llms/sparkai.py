@@ -32,8 +32,9 @@ class SparkAI(BaseLlm):
         self.presence_penalty = presence_penalty
         self.number_of_results = number_of_results
         self.api_key = api_key
-        api_base = get_config("SPARK_AI_API_BASE", "wss://aichat.xf-yun.com/v1/chat")
-
+        api_base = get_config("SPARK_AI_API_BASE", "wss://spark-api.xf-yun.com/v2.1/chat")
+        if not api_key or not api_base or not api_secret or not app_id:
+            logger.error("wrong Config With Spark Creds")
         self.ws = SparkOnceWebsocket(api_key=api_key, api_secret=api_secret, app_id=app_id, api_base=api_base)
         # messages = [
         #    {'role': 'user', 'content': '请帮我完成目标:\n\n帮我生成一个 2到2000的随机数\n\n'}, {'role': 'assistant',

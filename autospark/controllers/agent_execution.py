@@ -9,9 +9,11 @@ from pydantic import BaseModel
 from pydantic.fields import List
 
 from autospark.helper.time_helper import get_time_difference
+from autospark.models.agent_config import AgentConfiguration
 from autospark.models.agent_execution_config import AgentExecutionConfiguration
-from autospark.models.agent_workflow import AgentWorkflow
+from autospark.models.workflows.agent_workflow import AgentWorkflow
 from autospark.models.agent_schedule import AgentSchedule
+from autospark.models.workflows.iteration_workflow import IterationWorkflow
 from autospark.worker import execute_agent
 from autospark.models.agent_execution import AgentExecution
 from autospark.models.agent import Agent
@@ -33,7 +35,7 @@ class AgentExecutionOut(BaseModel):
     last_execution_time: datetime
     num_of_calls: int
     num_of_tokens: int
-    current_step_id: int
+    current_agent_step_id: int
     permission_id: Optional[int]
     created_at: datetime
     updated_at: datetime
@@ -49,7 +51,7 @@ class AgentExecutionIn(BaseModel):
     last_execution_time: Optional[datetime]
     num_of_calls: Optional[int]
     num_of_tokens: Optional[int]
-    current_step_id: Optional[int]
+    current_agent_step_id: Optional[int]
     permission_id: Optional[int]
     goal: Optional[List[str]]
     instruction: Optional[List[str]]
@@ -78,16 +80,38 @@ def create_agent_execution(agent_execution: AgentExecutionIn,
     if not agent:
         raise HTTPException(status_code=404, detail="Agent not found")
 
-    start_step_id = AgentWorkflow.fetch_trigger_step_id(db.session, agent.agent_workflow_id)
+    start_step = AgentWorkflow.fetch_trigger_step_id(db.session, agent.agent_workflow_id)
+    iteration_step_id = IterationWorkflow.fetch_trigger_step_id(db.session,
+                                                                start_step.action_reference_id).id if start_step.action_type == "ITERATION_WORKFLOW" else -1
 
     db_agent_execution = AgentExecution(status="RUNNING", last_execution_time=datetime.now(),
                                         agent_id=agent_execution.agent_id, name=agent_execution.name, num_of_calls=0,
                                         num_of_tokens=0,
-                                        current_step_id=start_step_id)
+                                        current_agent_step_id=start_step.id,
+                                        iteration_workflow_step_id=iteration_step_id)
     agent_execution_configs = {
         "goal": agent_execution.goal,
         "instruction": agent_execution.instruction
     }
+    agent_configs = db.session.query(AgentConfiguration).filter(AgentConfiguration.agent_id == agent_execution.agent_id).all()
+    keys_to_exclude = ["goal", "instruction"]
+    for agent_config in agent_configs:
+        if agent_config.key not in keys_to_exclude:
+            if agent_config.key == "toolkits":
+                if agent_config.value:
+                    toolkits = [int(item) for item in agent_config.value.strip('{}').split(',') if item.strip() and item != '[]']
+                    agent_execution_configs[agent_config.key] = toolkits
+                else:
+                    agent_execution_configs[agent_config.key] = []
+            elif agent_config.key == "constraints":
+                if agent_config.value:
+                    constraints = [item.strip('"') for item in agent_config.value.strip('{}').split(',')]
+                    agent_execution_configs[agent_config.key] = constraints
+                else:
+                    agent_execution_configs[agent_config.key] = []
+            else:
+                agent_execution_configs[agent_config.key] = agent_config.value
+
     db.session.add(db_agent_execution)
     db.session.commit()
     db.session.flush()

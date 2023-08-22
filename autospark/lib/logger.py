@@ -1,5 +1,6 @@
 import logging
 import inspect
+import traceback
 
 
 class CustomLogRecord(logging.LogRecord):
@@ -66,7 +67,8 @@ class Logger(metaclass=SingletonMeta):
             self.logger.warning(*args)
 
     def error(self, message, *args):
-        self.logger.error(message)
+        s = traceback.format_exc()
+        self.logger.error(message,exc_info=True)
         if args:
             self.logger.error(*args)
 

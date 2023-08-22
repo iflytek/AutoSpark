@@ -22,7 +22,6 @@ class JsonCleaner:
         input_str = re.sub(r':\s*true', ': True', input_str)
         return input_str
 
-
     @classmethod
     def extract_json_section(cls, input_str: str = ""):
         """
@@ -38,6 +37,27 @@ class JsonCleaner:
             first_brace_index = input_str.index("{")
             final_json = input_str[first_brace_index:]
             last_brace_index = final_json.rindex("}")
+            final_json = final_json[: last_brace_index + 1]
+            return final_json
+        except ValueError:
+            pass
+        return input_str
+
+    @classmethod
+    def extract_json_array_section(cls, input_str: str = ""):
+        """
+        Extract the json section from the given string.
+
+        Args:
+            input_str (str): The string from which the json section is to be extracted.
+
+        Returns:
+            str: The extracted json section.
+        """
+        try:
+            first_brace_index = input_str.index("[")
+            final_json = input_str[first_brace_index:]
+            last_brace_index = final_json.rindex("]")
             final_json = final_json[: last_brace_index + 1]
             return final_json
         except ValueError:

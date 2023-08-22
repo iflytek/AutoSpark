@@ -21,6 +21,7 @@ from autospark.models.user import User
 from autospark.lib.logger import logger
 
 # from autospark.types.db import OrganisationIn, OrganisationOut
+from autospark.models.workflows.agent_workflow import AgentWorkflow
 
 router = APIRouter()
 
@@ -126,7 +127,7 @@ def update_organisation(organisation_id: int, organisation: OrganisationIn,
     return db_organisation
 
 
-@router.get("/get/user/{user_id}",dependencies=[Depends(HTTPBearer())], response_model=OrganisationOut, status_code=201)
+@router.get("/get/user/{user_id}", dependencies=[Depends(HTTPBearer())], response_model=OrganisationOut, status_code=201)
 def get_organisations_by_user(user_id: int):
     """
     Get organisations associated with a user.If Organisation does not exists a new organisation is created
@@ -152,7 +153,7 @@ def get_organisations_by_user(user_id: int):
     return organisation
 
 
-@router.get("/llm_models")
+@router.get("/llm_models", dependencies=[Depends(HTTPBearer())])
 def get_llm_models(organisation=Depends(get_user_organisation)):
     """
     Get all the llm models associated with an organisation.
@@ -191,3 +192,18 @@ def get_llm_models(organisation=Depends(get_user_organisation)):
                          app_id=decrypted_app_id).get_models()
 
     return models
+
+
+@router.get("/agent_workflows")
+def agent_workflows(organisation=Depends(get_user_organisation)):
+    """
+    Get all the agent workflows
+
+    Args:
+        organisation: Organisation data.
+    """
+
+    agent_workflows = db.session.query(AgentWorkflow).all()
+    workflows = [workflow.name for workflow in agent_workflows]
+
+    return workflows

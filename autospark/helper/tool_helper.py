@@ -18,6 +18,8 @@ from autospark_kit.tools.base_tool import BaseToolkit
 from autospark_kit.tools.base_tool import BaseTool as BT
 from autospark_kit.tools.base_tool import BaseToolkit as BTK
 
+from autospark.tools.base_tool import ToolConfiguration
+
 
 def parse_github_url(github_url):
     parts = github_url.split('/')
@@ -235,8 +237,15 @@ def update_base_toolkit_info(classes, code_link, folder_name, new_toolkits, orga
 
             # Store the tools config in the database
             for tool_config_key in tool_config_keys:
-                new_config = ToolConfig.add_or_update(session, toolkit_id=new_toolkit.id,
-                                                      key=tool_config_key)
+                if isinstance(tool_config_key, ToolConfiguration):
+                    new_config = ToolConfig.add_or_update(session, toolkit_id=new_toolkit.id,
+                                                      key=tool_config_key.key,
+                                                      key_type=tool_config_key.key_type,
+                                                      is_required=tool_config_key.is_required,
+                                                      is_secret=tool_config_key.is_secret)
+                else:
+                    ToolConfig.add_or_update(session, toolkit_id=new_toolkit.id,
+                                                          key = tool_config_key)
     return tool_name_to_toolkit
 
 
@@ -264,6 +273,11 @@ def get_readme_content_from_code_link(tool_code_link):
     readme_content = response.text
     return readme_content
 
+def register_marketplace_toolkits(session, organisation):
+    tool_paths = ["superagi/tools", "superagi/tools/external_tools","superagi/tools/marketplace_tools"]
+    if organisation is not None:
+        process_files(tool_paths, session, organisation)
+        logger.info(f"Marketplace Toolkits Registered Successfully for Organisation ID : {organisation.id}!")
 
 def register_toolkits(session, organisation):
     folder_path = get_config("TOOLS_DIR")
@@ -306,3 +320,37 @@ def handle_tools_import():
         folder_dir = os.path.join(folder_path, folder_name)
         if os.path.isdir(folder_dir):
             sys.path.append(folder_dir)
+def compare_tools(tool1, tool2):
+    fields = ["name", "description"]
+    return any(tool1.get(field) != tool2.get(field) for field in fields)
+
+
+def compare_configs(config1, config2):
+    fields = ["key"]
+    return any(config1.get(field) != config2.get(field) for field in fields)
+
+
+def compare_toolkit(toolkit1, toolkit2):
+    main_toolkit_fields = ["description", "show_toolkit", "name", "tool_code_link"]
+    toolkit_diff = any(toolkit1.get(field) != toolkit2.get(field) for field in main_toolkit_fields)
+
+    tools1 = sorted(toolkit1.get("tools", []), key=lambda tool: tool.get("name", ""))
+    tools2 = sorted(toolkit2.get("tools", []), key=lambda tool: tool.get("name", ""))
+
+    if len(tools1) != len(tools2):
+        tools_diff = True
+    else:
+        tools_diff = any(compare_tools(tool1, tool2) for tool1, tool2 in zip(tools1, tools2))
+
+    tool_configs1 = sorted(toolkit1.get("configs", []), key=lambda config: config.get("key", ""))
+    tool_configs2 = sorted(toolkit2.get("configs", []), key=lambda config: config.get("key", ""))
+    if len(tool_configs1) != len(tool_configs2):
+        tool_configs_diff = True
+    else:
+        tool_configs_diff = any(compare_configs(config1, config2) for config1, config2 in zip(tool_configs1,
+                                                                                              tool_configs2))
+
+    print("toolkit_diff : ", toolkit_diff)
+    print("tools_diff : ", tools_diff)
+    print("tool_configs_diff : ", tool_configs_diff)
+    return toolkit_diff or tools_diff or tool_configs_diff

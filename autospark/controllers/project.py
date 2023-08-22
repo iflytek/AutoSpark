@@ -90,7 +90,7 @@ def get_project(project_id: int, Authorize: AuthJWT = Depends(check_auth)):
     return db_project
 
 
-@router.put("/update/{project_id}", response_model=ProjectOut)
+@router.put("/update/{project_id}", dependencies=[Depends(HTTPBearer())], response_model=ProjectOut)
 def update_project(project_id: int, project: ProjectIn,
                    Authorize: AuthJWT = Depends(check_auth)):
     """

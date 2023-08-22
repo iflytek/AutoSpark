@@ -15,10 +15,8 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 import autospark
-import urllib.parse
-import json
-import http.client as http_client
-from autospark.helper.twitter_tokens import TwitterTokens
+from autospark.agent.workflow_seed import IterationWorkflowSeed, AgentWorkflowSeed
+
 from datetime import datetime, timedelta
 from autospark.agent.agent_prompt_builder import AgentPromptBuilder
 from autospark.config.config import get_config
@@ -44,21 +42,18 @@ from autospark.controllers.toolkit import router as toolkit_router
 from autospark.controllers.user import router as user_router
 from autospark.controllers.agent_execution_config import router as agent_execution_config
 from autospark.controllers.analytics import router as analytics_router
-from autospark.helper.tool_helper import register_toolkits
+from autospark.helper.tool_helper import register_toolkits,register_marketplace_toolkits
 from autospark.lib.logger import logger
 from autospark.llms.google_palm import GooglePalm
 from autospark.llms.openai import OpenAi
 from autospark.llms.sparkai import SparkAI
-from autospark.helper.auth import get_current_user
-from autospark.models.agent_workflow import AgentWorkflow
-from autospark.models.agent_workflow_step import AgentWorkflowStep
+from autospark.models.agent_template import AgentTemplate
+from autospark.models.workflows.agent_workflow import AgentWorkflow
 from autospark.models.organisation import Organisation
-from autospark.models.tool_config import ToolConfig
-from autospark.models.toolkit import Toolkit
-from autospark.models.oauth_tokens import OauthTokens
 from autospark.models.types.login_request import LoginRequest
 from autospark.models.types.validate_llm_api_key_request import ValidateAPIKeyRequest
 from autospark.models.user import User
+from autospark.models.workflows.iteration_workflow import IterationWorkflow
 
 app = FastAPI()
 
@@ -131,8 +126,11 @@ class Settings(BaseModel):
 
 
 def create_access_token(email, Authorize: AuthJWT = Depends()):
-    # expiry_time_hours = get_config("JWT_EXPIRY")
-    expiry_time_hours = 1
+    expiry_time_hours = autospark.config.config.get_config("JWT_EXPIRY")
+    if type(expiry_time_hours) == str:
+        expiry_time_hours = int(expiry_time_hours)
+    if expiry_time_hours is None:
+        expiry_time_hours = 200
     expires = timedelta(hours=expiry_time_hours)
     access_token = Authorize.create_access_token(subject=email, expires_time=expires)
     return access_token
@@ -154,273 +152,80 @@ def authjwt_exception_handler(request: Request, exc: AuthJWTException):
     )
 
 
+def replace_old_iteration_workflows(session):
+    templates = session.query(AgentTemplate).all()
+    for template in templates:
+        iter_workflow = IterationWorkflow.find_by_id(session, template.agent_workflow_id)
+        if not iter_workflow:
+            continue
+        if iter_workflow.name == "Fixed Task Queue":
+            agent_workflow = AgentWorkflow.find_by_name(session, "Fixed Task Workflow")
+            template.agent_workflow_id = agent_workflow.id
+            session.commit()
+
+        if iter_workflow.name == "Maintain Task Queue":
+            agent_workflow = AgentWorkflow.find_by_name(session, "Dynamic Task Workflow")
+            template.agent_workflow_id = agent_workflow.id
+            session.commit()
+
+        if iter_workflow.name == "Don't Maintain Task Queue" or iter_workflow.name == "Goal Based Agent":
+            agent_workflow = AgentWorkflow.find_by_name(session, "Goal Based Workflow")
+            template.agent_workflow_id = agent_workflow.id
+            session.commit()
+
 @app.on_event("startup")
 async def startup_event():
     # Perform startup tasks here
     logger.info("Running Startup tasks")
     Session = sessionmaker(bind=engine)
     session = Session()
-    default_user = session.query(User).filter(User.email == "super6@agi.com").first()
+    default_user = session.query(User).filter(User.email == "autospark@iflytek.com").first()
     logger.info(default_user)
     if default_user is not None:
         organisation = session.query(Organisation).filter_by(id=default_user.organisation_id).first()
         logger.info(organisation)
         register_toolkits(session, organisation)
 
-    def build_single_step_agent():
-        agent_workflow = session.query(AgentWorkflow).filter(AgentWorkflow.name == "Goal Based Agent").first()
-
-        if agent_workflow is None:
-            agent_workflow = AgentWorkflow(name="Goal Based Agent", description="Goal based agent")
-            session.add(agent_workflow)
-            session.commit()
-
-        # step will have a prompt
-        # output of step is either tasks or set commands
-        first_step = session.query(AgentWorkflowStep).filter(AgentWorkflowStep.unique_id == "gb1").first()
-        output = AgentPromptBuilder.get_auto_spark_single_prompt()
-        if first_step is None:
-            first_step = AgentWorkflowStep(unique_id="gb1",
-                                           prompt=output["prompt"], variables=str(output["variables"]),
-                                           agent_workflow_id=agent_workflow.id, output_type="tools",
-                                           step_type="TRIGGER",
-                                           history_enabled=True,
-                                           completion_prompt="Determine which next tool to use, and respond using the format specified above:")
-            session.add(first_step)
-            session.commit()
-        else:
-            first_step.prompt = output["prompt"]
-            first_step.variables = str(output["variables"])
-            first_step.output_type = "tools"
-            first_step.completion_prompt = "Determine which next tool to use, and respond using the format specified above:"
-            session.commit()
-        first_step.next_step_id = first_step.id
-        session.commit()
-
-    def build_task_based_agents():
-        agent_workflow = session.query(AgentWorkflow).filter(AgentWorkflow.name == "Task Queue Agent With Seed").first()
-        if agent_workflow is None:
-            agent_workflow = AgentWorkflow(name="Task Queue Agent With Seed", description="Task queue based agent")
-            session.add(agent_workflow)
-            session.commit()
-
-        output = AgentPromptBuilder.start_task_based()
-
-        workflow_step1 = session.query(AgentWorkflowStep).filter(AgentWorkflowStep.unique_id == "tb1").first()
-        if workflow_step1 is None:
-            workflow_step1 = AgentWorkflowStep(unique_id="tb1",
-                                               prompt=output["prompt"], variables=str(output["variables"]),
-                                               step_type="TRIGGER",
-                                               agent_workflow_id=agent_workflow.id, next_step_id=-1,
-                                               output_type="tasks")
-            session.add(workflow_step1)
-        else:
-            workflow_step1.prompt = output["prompt"]
-            workflow_step1.variables = str(output["variables"])
-            workflow_step1.output_type = "tasks"
-            session.commit()
-
-        workflow_step2 = session.query(AgentWorkflowStep).filter(AgentWorkflowStep.unique_id == "tb2").first()
-        output = AgentPromptBuilder.create_tasks()
-        if workflow_step2 is None:
-            workflow_step2 = AgentWorkflowStep(unique_id="tb2",
-                                               prompt=output["prompt"], variables=str(output["variables"]),
-                                               step_type="NORMAL",
-                                               agent_workflow_id=agent_workflow.id, next_step_id=-1,
-                                               output_type="tasks")
-            session.add(workflow_step2)
-        else:
-            workflow_step2.prompt = output["prompt"]
-            workflow_step2.variables = str(output["variables"])
-            workflow_step2.output_type = "tasks"
-            session.commit()
-
-        workflow_step3 = session.query(AgentWorkflowStep).filter(AgentWorkflowStep.unique_id == "tb3").first()
-
-        output = AgentPromptBuilder.analyse_task()
-        if workflow_step3 is None:
-            workflow_step3 = AgentWorkflowStep(unique_id="tb3",
-                                               prompt=output["prompt"], variables=str(output["variables"]),
-                                               step_type="NORMAL",
-                                               agent_workflow_id=agent_workflow.id, next_step_id=-1,
-                                               output_type="tools")
-
-            session.add(workflow_step3)
-        else:
-            workflow_step3.prompt = output["prompt"]
-            workflow_step3.variables = str(output["variables"])
-            workflow_step3.output_type = "tools"
-            session.commit()
-
-        workflow_step4 = session.query(AgentWorkflowStep).filter(AgentWorkflowStep.unique_id == "tb4").first()
-        output = AgentPromptBuilder.prioritize_tasks()
-        if workflow_step4 is None:
-            workflow_step4 = AgentWorkflowStep(unique_id="tb4",
-                                               prompt=output["prompt"], variables=str(output["variables"]),
-                                               step_type="NORMAL",
-                                               agent_workflow_id=agent_workflow.id, next_step_id=-1,
-                                               output_type="replace_tasks")
-
-            session.add(workflow_step4)
-        else:
-            workflow_step4.prompt = output["prompt"]
-            workflow_step4.variables = str(output["variables"])
-            workflow_step4.output_type = "replace_tasks"
-            session.commit()
-        session.commit()
-        # initialize_tasks next is analysis
-        workflow_step1.next_step_id = workflow_step3.id
-
-        # analy next is create
-        workflow_step3.next_step_id = workflow_step2.id
-
-        #  create next is priority
-        workflow_step2.next_step_id = workflow_step4.id
-
-        # priority next is analysis
-        workflow_step4.next_step_id = workflow_step3.id
-        session.commit()
-
-    def build_action_based_agents():
-        agent_workflow = session.query(AgentWorkflow).filter(AgentWorkflow.name == "Fixed Task Queue").first()
-        if agent_workflow is None:
-            agent_workflow = AgentWorkflow(name="Fixed Task Queue", description="Fixed Task Queue")
-            session.add(agent_workflow)
-            session.commit()
-
-        output = AgentPromptBuilder.start_task_based()
-
-        workflow_step1 = session.query(AgentWorkflowStep).filter(AgentWorkflowStep.unique_id == "ab1").first()
-        if workflow_step1 is None:
-            workflow_step1 = AgentWorkflowStep(unique_id="ab1",
-                                               prompt=output["prompt"], variables=str(output["variables"]),
-                                               step_type="TRIGGER",
-                                               agent_workflow_id=agent_workflow.id, next_step_id=-1,
-                                               output_type="tasks")
-            session.add(workflow_step1)
-        else:
-            workflow_step1.prompt = output["prompt"]
-            workflow_step1.variables = str(output["variables"])
-            workflow_step1.output_type = "tasks"
-            workflow_step1.agent_workflow_id = agent_workflow.id
-            session.commit()
-
-        workflow_step2 = session.query(AgentWorkflowStep).filter(AgentWorkflowStep.unique_id == "ab2").first()
-        output = AgentPromptBuilder.analyse_task()
-        if workflow_step2 is None:
-            workflow_step2 = AgentWorkflowStep(unique_id="ab2",
-                                               prompt=output["prompt"], variables=str(output["variables"]),
-                                               step_type="NORMAL",
-                                               agent_workflow_id=agent_workflow.id, next_step_id=-1,
-                                               output_type="tools")
-            session.add(workflow_step2)
-        else:
-            workflow_step2.prompt = output["prompt"]
-            workflow_step2.variables = str(output["variables"])
-            workflow_step2.output_type = "tools"
-            workflow_step2.agent_workflow_id = agent_workflow.id
-            session.commit()
-
-        session.commit()
-        workflow_step1.next_step_id = workflow_step2.id
-        workflow_step2.next_step_id = workflow_step2.id
-        session.commit()
-
-    def build_watcher_based_agents():
-        agent_workflow = session.query(AgentWorkflow).filter(AgentWorkflow.name == "Watcher Based Agent").first()
-        if agent_workflow is None:
-            agent_workflow = AgentWorkflow(name="Watcher Based Agent", description="Watcher Based Agent")
-            session.add(agent_workflow)
-            session.commit()
-        output = AgentPromptBuilder.start_watcher_based()
-
-        workflow_step1 = session.query(AgentWorkflowStep).filter(AgentWorkflowStep.unique_id == "wb1").first()
-        if workflow_step1 is None:
-            workflow_step1 = AgentWorkflowStep(unique_id="wb1",
-                                               prompt=output["prompt"], variables=str(output["variables"]),
-                                               step_type="TRIGGER",
-                                               agent_workflow_id=agent_workflow.id, next_step_id=-1,
-                                               output_type="tasks")
-            session.add(workflow_step1)
-        else:
-            workflow_step1.prompt = output["prompt"]
-            workflow_step1.variables = str(output["variables"])
-            workflow_step1.output_type = "tasks"
-            session.commit()
-
-        workflow_step2 = session.query(AgentWorkflowStep).filter(AgentWorkflowStep.unique_id == "wb2").first()
-        output = AgentPromptBuilder.create_autospark_tasks()
-        if workflow_step2 is None:
-            workflow_step2 = AgentWorkflowStep(unique_id="wb2",
-                                               prompt=output["prompt"], variables=str(output["variables"]),
-                                               step_type="NORMAL",
-                                               agent_workflow_id=agent_workflow.id, next_step_id=-1,
-                                               output_type="tasks")
-            session.add(workflow_step2)
-        else:
-            workflow_step2.prompt = output["prompt"]
-            workflow_step2.variables = str(output["variables"])
-            workflow_step2.output_type = "tasks"
-            session.commit()
-
-        workflow_step3 = session.query(AgentWorkflowStep).filter(AgentWorkflowStep.unique_id == "wb3").first()
-
-        output = AgentPromptBuilder.analyse_autospark_task()
-        if workflow_step3 is None:
-            workflow_step3 = AgentWorkflowStep(unique_id="wb3",
-                                               prompt=output["prompt"], variables=str(output["variables"]),
-                                               step_type="NORMAL",
-                                               agent_workflow_id=agent_workflow.id, next_step_id=-1,
-                                               output_type="tools")
-
-            session.add(workflow_step3)
-        else:
-            workflow_step3.prompt = output["prompt"]
-            workflow_step3.variables = str(output["variables"])
-            workflow_step3.output_type = "tools"
-            session.commit()
-
-        workflow_step4 = session.query(AgentWorkflowStep).filter(AgentWorkflowStep.unique_id == "wb4").first()
-        output = AgentPromptBuilder.prioritize_autospark_tasks()
-        if workflow_step4 is None:
-            workflow_step4 = AgentWorkflowStep(unique_id="wb4",
-                                               prompt=output["prompt"], variables=str(output["variables"]),
-                                               step_type="NORMAL",
-                                               agent_workflow_id=agent_workflow.id, next_step_id=-1,
-                                               output_type="replace_tasks")
-
-            session.add(workflow_step4)
-        else:
-            workflow_step4.prompt = output["prompt"]
-            workflow_step4.variables = str(output["variables"])
-            workflow_step4.output_type = "replace_tasks"
-            session.commit()
-        session.commit()
-        # initialize_tasks next is analysis
-        workflow_step1.next_step_id = workflow_step3.id
-
-        # analy next is create
-        workflow_step3.next_step_id = workflow_step2.id
-
-        #  create next is priority
-        workflow_step2.next_step_id = workflow_step4.id
-
-        # priority next is analysis
-        workflow_step4.next_step_id = workflow_step3.id
-        session.commit()
-
-    def check_toolkit_registration():
+    def register_toolkit_for_all_organisation():
         organizations = session.query(Organisation).all()
         for organization in organizations:
             register_toolkits(session, organization)
         logger.info("Successfully registered local toolkits for all Organisations!")
 
-    build_single_step_agent()
-    build_task_based_agents()
-    build_action_based_agents()
-    build_watcher_based_agents()
+    def register_toolkit_for_master_organisation():
+        marketplace_organisation_id = autospark.config.config.get_config("MARKETPLACE_ORGANISATION_ID")
+        marketplace_organisation = session.query(Organisation).filter(
+            Organisation.id == marketplace_organisation_id).first()
+        if marketplace_organisation is not None:
+            register_marketplace_toolkits(session, marketplace_organisation)
+
+    IterationWorkflowSeed.build_single_step_agent(session)
+    IterationWorkflowSeed.build_task_based_agents(session)
+    IterationWorkflowSeed.build_action_based_agents(session)
+    IterationWorkflowSeed.build_initialize_task_workflow(session)
+
+    AgentWorkflowSeed.build_goal_based_agent(session)
+    AgentWorkflowSeed.build_task_based_agent(session)
+    AgentWorkflowSeed.build_fixed_task_based_agent(session)
+    AgentWorkflowSeed.build_sales_workflow(session)
+    AgentWorkflowSeed.build_recruitment_workflow(session)
+    AgentWorkflowSeed.build_coding_workflow(session)
+
+    # NOTE: remove old workflows. Need to remove this changes later
+    workflows = ["Sales Engagement Workflow", "Recruitment Workflow", "SuperCoder", "Goal Based Workflow",
+     "Dynamic Task Workflow", "Fixed Task Workflow"]
+    workflows = session.query(AgentWorkflow).filter(AgentWorkflow.name.not_in(workflows))
+    for workflow in workflows:
+        session.delete(workflow)
+
+    # AgentWorkflowSeed.doc_search_and_code(session)
+    # AgentWorkflowSeed.build_research_email_workflow(session)
+    replace_old_iteration_workflows(session)
+
     if env != "PROD":
-        check_toolkit_registration()
+        register_toolkit_for_all_organisation()
+    else:
+        register_toolkit_for_master_organisation()
     session.close()
 
 
@@ -561,6 +366,15 @@ async def root(open_ai_key: str, Authorize: AuthJWT = Depends()):
 async def say_hello(name: str, Authorize: AuthJWT = Depends()):
     Authorize.jwt_required()
     return {"message": f"Hello {name}"}
+
+@app.get('/get/github_client_id')
+def github_client_id():
+    """Get GitHub Client ID"""
+
+    git_hub_client_id = autospark.config.config.get_config("GITHUB_CLIENT_ID")
+    if git_hub_client_id:
+        git_hub_client_id = git_hub_client_id.strip()
+    return {"github_client_id": git_hub_client_id}
 
 # # __________________TO RUN____________________________
 # # uvicorn main:app --host 0.0.0.0 --port 8001 --reload

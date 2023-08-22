@@ -8,7 +8,7 @@ export default function Agents({sendAgentData, agents}) {
   return (<>
       <div className={styles.container}>
         <div className={styles.title_box}>
-          <p className={styles.title_text}>代理商</p>
+          <p className={styles.title_text}>代理</p>
         </div>
         <div className={styles.wrapper} style={{marginBottom: '10px', marginTop: '4px'}}>
           <button style={{width: '100%'}} className="secondary_button" onClick={() => sendAgentData({

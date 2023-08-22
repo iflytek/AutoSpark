@@ -8,7 +8,7 @@ class AgentConfigInput(BaseModel):
     description: str
     goal: List[str]
     instruction: List[str]
-    agent_type: str
+    agent_workflow: str
     constraints: List[str]
     toolkits: List[int]
     tools: List[int]
@@ -19,3 +19,4 @@ class AgentConfigInput(BaseModel):
     LTM_DB: str
     max_iterations: int
     user_timezone: Optional[str]
+    knowledge: Optional[int]

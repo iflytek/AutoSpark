@@ -4,6 +4,9 @@ from datetime import datetime, timedelta
 from sqlalchemy.orm import sessionmaker
 
 import autospark.worker
+from autospark.agent.agent_tool_step_handler import AgentToolStepHandler
+from autospark.agent.agent_iteration_step_handler import AgentIterationStepHandler
+import remote_pdb
 from autospark.agent.auto_spark import AutoSpark
 from autospark.config.config import get_config
 from autospark.helper.encyption_helper import decrypt_data
@@ -16,7 +19,7 @@ from autospark.models.agent_execution import AgentExecution
 from autospark.models.agent_execution_config import AgentExecutionConfiguration
 from autospark.models.agent_execution_feed import AgentExecutionFeed
 from autospark.models.agent_execution_permission import AgentExecutionPermission
-from autospark.models.agent_workflow_step import AgentWorkflowStep
+from autospark.models.workflows.agent_workflow_step import AgentWorkflowStep
 from autospark.models.configuration import Configuration
 from autospark.models.db import connect_db
 from autospark.models.resource import Resource
@@ -40,169 +43,83 @@ engine = connect_db()
 Session = sessionmaker(bind=engine)
 
 
-class DBToolkitConfiguration(BaseToolkitConfiguration):
-    session: Session
-    toolkit_id: int
-
-    def __init__(self, session=None, toolkit_id=None):
-        self.session = session
-        self.toolkit_id = toolkit_id
-
-    def get_tool_config(self, key: str):
-        tool_config = self.session.query(ToolConfig).filter_by(key=key, toolkit_id=self.toolkit_id).first()
-        if tool_config and tool_config.value:
-            return tool_config.value
-        return super().get_tool_config(key=key)
-
-
 class AgentExecutor:
-    @staticmethod
-    def validate_filename(filename):
-        """
-        Validate the filename by removing the last three characters if the filename ends with ".py".
+    def execute_next_step(self, agent_execution_id):
+        global engine
+        # try:
+        engine.dispose()
+        session = Session()
+        try:
+            agent_execution = session.query(AgentExecution).filter(AgentExecution.id == agent_execution_id).first()
+            '''Avoiding running old agent executions'''
+            if agent_execution and agent_execution.created_at < datetime.utcnow() - timedelta(days=1):
+                logger.error("Older agent execution found, skipping execution")
+                return
 
-        Args:
-            filename (str): The filename.
+            agent = session.query(Agent).filter(Agent.id == agent_execution.agent_id).first()
+            agent_config = Agent.fetch_configuration(session, agent.id)
+            if agent.is_deleted or (
+                    agent_execution.status != "RUNNING" and agent_execution.status != "WAITING_FOR_PERMISSION"):
+                logger.error(f"Agent execution stopped. {agent.id}: {agent_execution.status}")
+                return
 
-        Returns:
-            str: The validated filename.
-        """
-        if filename.endswith(".py"):
-            return filename[:-3]  # Remove the last three characters (i.e., ".py")
-        return filename
+            organisation = Agent.find_org_by_agent_id(session, agent_id=agent.id)
+            if self._check_for_max_iterations(session, organisation.id, agent_config, agent_execution_id):
+                logger.error(f"Agent execution stopped. Max iteration exceeded. {agent.id}: {agent_execution.status}")
+                return
 
-    @staticmethod
-    def create_object(tool, session):
-        """
-        Create an object of a agent usable tool dynamically.
+            model_api_key = AgentConfiguration.get_model_api_key(session, agent_execution.agent_id,
+                                                                 agent_config["model"])
+            model_api_secret = AgentConfiguration.get_model_api_secret(session, agent_execution.agent_id,
+                                                                       agent_config["model"])
+            model_app_id = AgentConfiguration.get_model_app_id(session, agent_execution.agent_id,
+                                                               agent_config["model"])
+            model_llm_source = ModelSourceType.get_model_source_from_model(agent_config["model"]).value
+            try:
+                vector_store_type = VectorStoreType.get_vector_store_type(agent_config["LTM_DB"])
+                memory = VectorFactory.get_vector_storage(vector_store_type, "super-agent-index1",
+                                                          AgentExecutor.get_embedding(model_llm_source, model_api_key))
+            except:
+                logger.info("Unable to setup the pinecone connection...")
+                memory = None
 
-        Args:
-            tool (Tool) : Tool object from which agent tool would be made.
+            agent_workflow_step = session.query(AgentWorkflowStep).filter(
+                AgentWorkflowStep.id == agent_execution.current_agent_step_id).first()
+            try:
+                if agent_workflow_step.action_type == "TOOL":
+                    tool_step_handler = AgentToolStepHandler(session,
+                                                             llm=get_model(model=agent_config["model"],
+                                                                           api_key=model_api_key,
+                                                                           api_secret=model_api_secret,
+                                                                           app_id=model_app_id),
+                                                             agent_id=agent.id, agent_execution_id=agent_execution_id,
+                                                             memory=memory)
+                    tool_step_handler.execute_step()
+                elif agent_workflow_step.action_type == "ITERATION_WORKFLOW":
+                    iteration_step_handler = AgentIterationStepHandler(session,
+                                                                       llm=get_model(model=agent_config["model"],
+                                                                                     api_key=model_api_key,
+                                                                                     api_secret=model_api_secret,
+                                                                                     app_id=model_app_id)
+                                                                       , agent_id=agent.id,
+                                                                       agent_execution_id=agent_execution_id,
+                                                                       memory=memory)
+                    iteration_step_handler.execute_step()
+            except Exception as e:
+                logger.error("Exception in executing the step: {}".format(e))
+                autospark.worker.execute_agent.apply_async((agent_execution_id, datetime.now()), countdown=15)
+                return
 
-        Returns:
-            object: The object of the agent usable tool.
-        """
-        file_name = AgentExecutor.validate_filename(filename=tool.file_name)
-
-        tools_dir = get_config("TOOLS_DIR")
-        if tools_dir is None:
-            tools_dir = "autospark/tools"
-        parsed_tools_dir = tools_dir.rstrip("/")
-        module_name = ".".join(parsed_tools_dir.split("/") + [tool.folder_name, file_name])
-
-        # module_name = f"autospark.tools.{folder_name}.{file_name}"
-
-        # Load the module dynamically
-        module = importlib.import_module(module_name)
-
-        # Get the class from the loaded module
-        obj_class = getattr(module, tool.class_name)
-
-        # Create an instance of the class
-        new_object = obj_class()
-        new_object.toolkit_config = DBToolkitConfiguration(session=session, toolkit_id=tool.toolkit_id)
-        return new_object
-
-    @classmethod
-    def get_model_api_key_from_execution(cls, model, agent_execution, session):
-        """
-        Get the model API key from the agent execution.
-
-        Args:
-            agent_execution (AgentExecution): The agent execution.
-            session (Session): The database session.
-
-        Returns:
-            str: The model API key.
-        """
-        config_model_source = AgentExecutor.get_llm_source(agent_execution, session)
-        selected_model_source = ModelSourceType.get_model_source_from_model(model)
-        if selected_model_source.value == config_model_source:
-            config_value = Configuration.fetch_value_by_agent_id(session, agent_execution.agent_id, "model_api_key")
-            model_api_key = decrypt_data(config_value)
-            return model_api_key
-
-        if selected_model_source == ModelSourceType.GooglePalm:
-            return get_config("PALM_API_KEY")
-        if selected_model_source == ModelSourceType.SparkAI:
-            return get_config("SPARK_API_KEY")
-        return get_config("OPENAI_API_KEY")
-
-    @classmethod
-    def get_model_app_id_from_execution(cls, model, agent_execution, session):
-        """
-        Get the model API key from the agent execution.
-
-        Args:
-            agent_execution (AgentExecution): The agent execution.
-            session (Session): The database session.
-
-        Returns:
-            str: The model API key.
-        """
-        config_model_source = AgentExecutor.get_llm_source(agent_execution, session)
-        selected_model_source = ModelSourceType.get_model_source_from_model(model)
-        if selected_model_source.value == config_model_source:
-            config_value = Configuration.fetch_value_by_agent_id(session, agent_execution.agent_id, "model_app_id")
-            model_app_id = decrypt_data(config_value)
-            return model_app_id
-
-        if selected_model_source == ModelSourceType.SparkAI:
-            return get_config("SPARK_APP_ID")
-        return ""
-
-    @classmethod
-    def get_model_api_secret_from_execution(cls, model, agent_execution, session):
-        """
-        Get the model API key from the agent execution.
-
-        Args:
-            agent_execution (AgentExecution): The agent execution.
-            session (Session): The database session.
-
-        Returns:
-            str: The model API key.
-        """
-        config_model_source = AgentExecutor.get_llm_source(agent_execution, session)
-        selected_model_source = ModelSourceType.get_model_source_from_model(model)
-        if selected_model_source.value == config_model_source:
-            config_value = Configuration.fetch_value_by_agent_id(session, agent_execution.agent_id, "model_api_secret")
-            model_api_secret = decrypt_data(config_value)
-            return model_api_secret
-
-        if selected_model_source == ModelSourceType.SparkAI:
-            return get_config("SPARK_API_SECRET")
-        return ""
-
-    @classmethod
-    def get_llm_source(cls, agent_execution, session):
-        return Configuration.fetch_value_by_agent_id(session, agent_execution.agent_id, "model_source") or "OpenAi"
-
-    @classmethod
-    def get_embedding(cls, model_source, model_api_key):
-        if "OpenAi" in model_source:
-            return OpenAiEmbedding(api_key=model_api_key)
-        if "Google" in model_source:
-            return GooglePalm(api_key=model_api_key)
-        return None
-
-    @staticmethod
-    def get_organisation(agent_execution, session):
-        """
-        Get the model API key from the agent execution.
-
-        Args:
-            agent_execution (AgentExecution): The agent execution.
-            session (Session): The database session.
-
-        Returns:
-             str: The model API key.
-        """
-        agent_id = agent_execution.agent_id
-        agent = session.query(Agent).filter(Agent.id == agent_id).first()
-        organisation = agent.get_agent_organisation(session)
-
-        return organisation
+            agent_execution = session.query(AgentExecution).filter(AgentExecution.id == agent_execution_id).first()
+            if agent_execution.status == "COMPLETED" or agent_execution.status == "WAITING_FOR_PERMISSION":
+                logger.info("Agent Execution is completed or waiting for permission")
+                session.close()
+                return
+            autospark.worker.execute_agent.apply_async((agent_execution_id, datetime.now()), countdown=10)
+            # superagi.worker.execute_agent.delay(agent_execution_id, datetime.now())
+        finally:
+            session.close()
+            engine.dispose()
 
     def execute_next_action(self, agent_execution_id):
         """
@@ -294,7 +211,7 @@ class AgentExecutor:
 
         spawned_agent = AutoSpark(ai_name=parsed_config["name"], ai_role=parsed_config["description"],
                                   llm=get_model(model=parsed_config["model"], api_key=model_api_key,
-                                               api_secret=model_api_secret, app_id=model_app_id), tools=tools,
+                                                api_secret=model_api_secret, app_id=model_app_id), tools=tools,
                                   memory=memory,
                                   agent_config=parsed_config,
                                   agent_execution_config=parsed_execution_config)
@@ -348,98 +265,26 @@ class AgentExecutor:
         session.close()
         engine.dispose()
 
-    def set_default_params_tools(self, tools, parsed_config, parsed_execution_config, agent_id, model_api_key,
-                                 session, resource_description=None,model_api_secret=None,model_app_id=None):
-        """
-        Set the default parameters for the tools.
+    @classmethod
+    def get_embedding(cls, model_source, model_api_key):
+        if "OpenAi" in model_source:
+            return OpenAiEmbedding(api_key=model_api_key)
+        if "Google" in model_source:
+            return GooglePalm(api_key=model_api_key)
+        return None
 
-        Args:
-            tools (list): The list of tools.
-            parsed_config (dict): Parsed agent configuration.
-            parsed_execution_config (dict): Parsed execution configuration
-            agent_id (int): The ID of the agent.
-            model_api_key (str): The API key of the model.
-            resource_description (str): The description of the resource.
+    def _check_for_max_iterations(self, session, organisation_id, agent_config, agent_execution_id):
+        db_agent_execution = session.query(AgentExecution).filter(AgentExecution.id == agent_execution_id).first()
+        if agent_config["max_iterations"] <= db_agent_execution.num_of_calls:
+            db_agent_execution.status = "ITERATION_LIMIT_EXCEEDED"
 
-        Returns:
-            list: The list of tools with default parameters.
-        """
-        new_tools = []
-        for tool in tools:
-            if hasattr(tool, 'goals'):
-                tool.goals = parsed_execution_config["goal"]
-            if hasattr(tool, 'instructions'):
-                tool.instructions = parsed_execution_config["instruction"]
-            if hasattr(tool, 'llm') and (parsed_config["model"] == "gpt4" or parsed_config[
-                "model"] == "gpt-3.5-turbo") and tool.name != "QueryResource":
-                tool.llm = get_model(model="gpt-3.5-turbo", api_key=model_api_key, temperature=0.4,
-                                     api_secret=model_api_secret, app_id=model_app_id)
-            elif hasattr(tool, 'llm'):
-                tool.llm = get_model(model=parsed_config["model"], api_key=model_api_key, temperature=0.4,
-                                     api_secret=model_api_secret, app_id=model_app_id)
-            if hasattr(tool, 'agent_id'):
-                tool.agent_id = agent_id
-            if hasattr(tool, 'agent_execution_id'):
-                tool.agent_execution_id = parsed_config["agent_execution_id"]
-            if hasattr(tool, 'resource_manager'):
-                tool.resource_manager = FileManager(session=session, agent_id=agent_id,
-                                                    agent_execution_id=parsed_config[
-                                                        "agent_execution_id"])
-            if hasattr(tool, 'tool_response_manager'):
-                tool.tool_response_manager = ToolResponseQueryManager(session=session, agent_execution_id=parsed_config[
-                    "agent_execution_id"])
-
-            if tool.name == "QueryResource" and resource_description:
-                tool.description = tool.description.replace("{summary}", resource_description)
-            new_tools.append(tool)
-        return tools
-
-    def handle_wait_for_permission(self, agent_execution, spawned_agent, session):
-        """
-        Handles the wait for permission when the agent execution is waiting for permission.
-
-        Args:
-            agent_execution (AgentExecution): The agent execution.
-            spawned_agent (AutoSpark): The spawned agent.
-            session (Session): The database session object.
-
-        Raises:
-            ValueError: If the permission is still pending.
-        """
-        if agent_execution.status != "WAITING_FOR_PERMISSION":
-            return
-        agent_execution_permission = session.query(AgentExecutionPermission).filter(
-            AgentExecutionPermission.id == agent_execution.permission_id).first()
-        if agent_execution_permission.status == "PENDING":
-            raise ValueError("Permission is still pending")
-        if agent_execution_permission.status == "APPROVED":
-            result = spawned_agent.handle_tool_response(session, agent_execution_permission.assistant_reply).get(
-                "result")
-        else:
-            result = f"User denied the permission to run the tool {agent_execution_permission.tool_name}" \
-                     f"{' and has given the following feedback : ' + agent_execution_permission.user_feedback if agent_execution_permission.user_feedback else ''}"
-
-        agent_execution_feed = AgentExecutionFeed(agent_execution_id=agent_execution_permission.agent_execution_id,
-                                                  agent_id=agent_execution_permission.agent_id,
-                                                  feed=result,
-                                                  role="user"
-                                                  )
-        session.add(agent_execution_feed)
-        agent_execution.status = "RUNNING"
-        session.commit()
-
-    def get_agent_resource_summary(self, agent_id: int, session: Session, model_llm_source: str, default_summary: str):
-        if ModelSourceType.GooglePalm.value in model_llm_source:
-            return
-        ResourceSummarizer(session=session).generate_agent_summary(agent_id=agent_id, generate_all=True)
-        agent_config_resource_summary = session.query(AgentConfiguration). \
-            filter(AgentConfiguration.agent_id == agent_id,
-                   AgentConfiguration.key == "resource_summary").first()
-        resource_summary = agent_config_resource_summary.value if agent_config_resource_summary is not None else default_summary
-        return resource_summary
-
-    def check_for_resource(self, agent_id: int, session: Session):
-        resource = session.query(Resource).filter(Resource.agent_id == agent_id, Resource.channel == 'INPUT').first()
-        if resource is None:
-            return False
-        return True
+            EventHandler(session=session).create_event('run_iteration_limit_crossed',
+                                                       {'agent_execution_id': db_agent_execution.id,
+                                                        'name': db_agent_execution.name,
+                                                        'tokens_consumed': db_agent_execution.num_of_tokens,
+                                                        "calls": db_agent_execution.num_of_calls},
+                                                       db_agent_execution.agent_id, organisation_id)
+            session.commit()
+            logger.info("ITERATION_LIMIT_CROSSED")
+            return True
+        return False

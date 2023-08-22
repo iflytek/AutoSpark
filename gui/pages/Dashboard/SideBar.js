@@ -23,7 +23,7 @@ export default function SideBar({onSelectEvent}) {
              className={`${styles.section} ${sectionSelected === 'agents' ? styles.selected : ''}`}>
           <div className={styles.button_icon}><Image width={17} height={17} src="/images/agents_light.svg"
                                                      alt="agent-icon"/></div>
-          <div>代理商</div>
+          <div>代理</div>
         </div>
       </div>
       <div className={styles.selection_section}>

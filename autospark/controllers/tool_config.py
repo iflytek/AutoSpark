@@ -9,6 +9,10 @@ from autospark.helper.auth import get_user_organisation
 from autospark.models.organisation import Organisation
 from autospark.models.tool_config import ToolConfig
 from autospark.models.toolkit import Toolkit
+from autospark.helper.encyption_helper import encrypt_data
+from autospark.helper.encyption_helper import decrypt_data, is_encrypted
+from autospark.types.key_type import ToolConfigKeyType
+import json
 
 router = APIRouter()
 
@@ -51,11 +55,16 @@ def update_tool_config(toolkit_name: str, configs: list, organisation: Organisat
         for config in configs:
             key = config.get("key")
             value = config.get("value")
+            if value is None: 
+                continue
             if key is not None:
                 tool_config = db.session.query(ToolConfig).filter_by(toolkit_id=toolkit.id, key=key).first()
                 if tool_config:
+                    if tool_config.key_type ==  ToolConfigKeyType.FILE.value:
+                        value = json.dumps(value)
                     # Update existing tool config
-                    tool_config.value = value
+                    # added encryption
+                    tool_config.value = encrypt_data(value)
                     db.session.commit()
 
         return {"message": "Tool configs updated successfully"}
@@ -87,18 +96,20 @@ def create_or_update_tool_config(toolkit_name: str, tool_configs,
         raise HTTPException(status_code=404, detail='ToolKit not found')
 
     # Iterate over the tool_configs list
-    for tool_config_data in tool_configs:
+    for tool_config in tool_configs:
         existing_tool_config = db.session.query(ToolConfig).filter(
             ToolConfig.toolkit_id == toolkit.id,
-            ToolConfig.key == tool_config_data.key
+            ToolConfig.key == tool_config.key
         ).first()
 
-        if existing_tool_config:
+        if existing_tool_config.value:
             # Update the existing tool config
-            existing_tool_config.value = tool_config_data.value
+            if existing_tool_config.key_type == ToolConfigKeyType.FILE.value:
+                existing_tool_config.value = json.dumps(existing_tool_config.value)
+            existing_tool_config.value = encrypt_data(tool_config.value)
         else:
             # Create a new tool config
-            new_tool_config = ToolConfig(key=tool_config_data.key, value=tool_config_data.value, toolkit_id=toolkit.id)
+            new_tool_config = ToolConfig(key=tool_config.key, value=encrypt_data(tool_config.value), toolkit_id=toolkit.id)
             db.session.add(new_tool_config)
 
     db.session.commit()
@@ -130,6 +141,13 @@ def get_all_tool_configs(toolkit_name: str, organisation: Organisation = Depends
         raise HTTPException(status_code=404, detail='ToolKit not found')
 
     tool_configs = db.session.query(ToolConfig).filter(ToolConfig.toolkit_id == toolkit.id).all()
+    for tool_config in tool_configs:
+        if tool_config.value:
+            if(is_encrypted(tool_config.value)):
+                tool_config.value = decrypt_data(tool_config.value)
+            if tool_config.key_type == ToolConfigKeyType.FILE.value:
+                tool_config.value = json.loads(tool_config.value)
+    
     return tool_configs
 
 
@@ -164,5 +182,9 @@ def get_tool_config(toolkit_name: str, key: str, organisation: Organisation = De
 
     if not tool_config:
         raise HTTPException(status_code=404, detail="Tool configuration not found")
+    if(is_encrypted(tool_config.value)):
+        tool_config.value = decrypt_data(tool_config.value)
+    if tool_config.key_type == ToolConfigKeyType.FILE.value:
+        tool_config.value = json.loads(tool_config.value)
 
     return tool_config

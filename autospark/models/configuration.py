@@ -2,7 +2,7 @@ from fastapi import HTTPException
 from sqlalchemy import Column, Integer, String,Text
 
 from autospark.helper.encyption_helper import decrypt_data
-from autospark.models.agent import Agent
+
 from autospark.models.base_model import DBBaseModel
 from autospark.models.organisation import Organisation
 from autospark.models.project import Project
@@ -73,6 +73,7 @@ class Configuration(DBBaseModel):
             dict: Parsed configuration.
 
         """
+        from autospark.models.agent import Agent
         agent = session.query(Agent).filter(Agent.id == agent_id).first()
         if not agent:
             raise HTTPException(status_code=404, detail="Agent not found")

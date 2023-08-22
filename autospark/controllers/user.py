@@ -74,7 +74,7 @@ def create_user(user: UserIn,
     return db_user
 
 
-@router.get("/get/{user_id}", response_model=UserOut)
+@router.get("/get/{user_id}", dependencies=[Depends(HTTPBearer())], response_model=UserOut)
 def get_user(user_id: int,
              Authorize: AuthJWT = Depends(check_auth)):
     """

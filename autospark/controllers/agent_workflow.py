@@ -5,7 +5,7 @@ from fastapi_sqlalchemy import db
 from datetime import datetime
 
 from autospark.helper.auth import get_user_organisation, get_current_user
-from autospark.models.agent_workflow import AgentWorkflow
+from autospark.models.workflows.agent_workflow import AgentWorkflow
 from sqlalchemy import or_, and_
 from pydantic import BaseModel
 

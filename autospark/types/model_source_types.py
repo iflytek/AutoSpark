@@ -5,6 +5,8 @@ class ModelSourceType(Enum):
     GooglePalm = 'Google Palm'
     OpenAI = 'OpenAi'
     SparkAI = "SparkAI"
+    Replicate = 'Replicate'
+
 
     @classmethod
     def get_model_source_type(cls, name):

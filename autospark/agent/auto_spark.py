@@ -26,7 +26,7 @@ from autospark.models.agent_execution import AgentExecution
 # from autospark.models.types.agent_with_config import AgentWithConfig
 from autospark.models.agent_execution_feed import AgentExecutionFeed
 from autospark.models.agent_execution_permission import AgentExecutionPermission
-from autospark.models.agent_workflow_step import AgentWorkflowStep
+from autospark.models.workflows.agent_workflow_step import AgentWorkflowStep
 from autospark.models.db import connect_db
 from autospark_kit.tools.base_tool import BaseTool
 from autospark.types.common import BaseMessage

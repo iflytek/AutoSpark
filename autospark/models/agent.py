@@ -1,4 +1,5 @@
 from __future__ import annotations
+import ast
 
 import json
 
@@ -8,7 +9,7 @@ import autospark.models
 from autospark.models.agent_config import AgentConfiguration
 from autospark.models.agent_template import AgentTemplate
 from autospark.models.agent_template_config import AgentTemplateConfig
-from autospark.models.agent_workflow import AgentWorkflow
+from autospark.models.workflows.agent_workflow import AgentWorkflow
 # from autospark.models import AgentConfiguration
 from autospark.models.base_model import DBBaseModel
 from autospark.lib.logger import logger
@@ -25,6 +26,7 @@ class Agent(DBBaseModel):
         project_id (int): The identifier of the associated project.
         description (str): The description of the agent.
         agent_workflow_id (int): The identifier of the associated agent workflow.
+        is_deleted (bool): The flag associated for agent deletion
     """
 
     __tablename__ = 'agents'
@@ -72,7 +74,6 @@ class Agent(DBBaseModel):
             "description": agent.description,
             "goal": [],
             "instruction": [],
-            "agent_type": None,
             "constraints": [],
             "tools": [],
             "exit": None,
@@ -83,6 +84,7 @@ class Agent(DBBaseModel):
             "memory_window": None,
             "max_iterations": None,
             "is_deleted": agent.is_deleted,
+            "knowledge": None
         }
         if not agent_configurations:
             return parsed_config
@@ -104,14 +106,14 @@ class Agent(DBBaseModel):
 
         """
 
-        if key in ["name", "description", "agent_type", "exit", "model", "permission_type", "LTM_DB", "resource_summary"]:
+        if key in ["name", "description", "exit", "model", "permission_type", "LTM_DB", "resource_summary","knowledge"]:
             return value
         elif key in ["project_id", "memory_window", "max_iterations", "iteration_interval"]:
             return int(value)
         elif key in ["goal", "constraints", "instruction", "is_deleted"]:
             return eval(value)
         elif key == "tools":
-            return [int(x) for x in json.loads(value)]
+            return list(ast.literal_eval(value))
 
     @classmethod
     def create_agent_with_config(cls, db, agent_with_config):
@@ -133,22 +135,22 @@ class Agent(DBBaseModel):
         db.session.flush()  # Flush pending changes to generate the agent's ID
         db.session.commit()
 
-        if agent_with_config.agent_type == "Don't Maintain Task Queue":
-            agent_workflow = db.session.query(AgentWorkflow).filter(AgentWorkflow.name == "Goal Based Agent").first()
-            logger.info(agent_workflow)
-            db_agent.agent_workflow_id = agent_workflow.id
-        elif agent_with_config.agent_type == "Maintain Task Queue":
-            agent_workflow = db.session.query(AgentWorkflow).filter(
-                AgentWorkflow.name == "Task Queue Agent With Seed").first()
-            db_agent.agent_workflow_id = agent_workflow.id
-        elif agent_with_config.agent_type == "Fixed Task Queue":
-            agent_workflow = db.session.query(AgentWorkflow).filter(
-                AgentWorkflow.name == "Fixed Task Queue").first()
-            db_agent.agent_workflow_id = agent_workflow.id
-        elif agent_with_config.agent_type == "Watcher Based Agent":
-            agent_workflow = db.session.query(AgentWorkflow).filter(
-                AgentWorkflow.name == "Watcher Based Agent").first()
-            db_agent.agent_workflow_id = agent_workflow.id
+        agent_workflow = AgentWorkflow.find_by_name(session=db.session, name=agent_with_config.agent_workflow)
+        logger.info("Agent workflow:", str(agent_workflow))
+        db_agent.agent_workflow_id = agent_workflow.id
+        #
+        # if agent_with_config.agent_type == "Don't Maintain Task Queue":
+        #     agent_workflow = db.session.query(AgentWorkflow).filter(AgentWorkflow.name == "Goal Based Agent").first()
+        #     logger.info(agent_workflow)
+        #     db_agent.agent_workflow_id = agent_workflow.id
+        # elif agent_with_config.agent_type == "Maintain Task Queue":
+        #     agent_workflow = db.session.query(AgentWorkflow).filter(
+        #         AgentWorkflow.name == "Task Queue Agent With Seed").first()
+        #     db_agent.agent_workflow_id = agent_workflow.id
+        # elif agent_with_config.agent_type == "Fixed Task Queue":
+        #     agent_workflow = db.session.query(AgentWorkflow).filter(
+        #         AgentWorkflow.name == "Fixed Task Queue").first()
+        #     db_agent.agent_workflow_id = agent_workflow.id
 
         db.session.commit()
 
@@ -156,7 +158,6 @@ class Agent(DBBaseModel):
         agent_config_values = {
             "goal": agent_with_config.goal,
             "instruction": agent_with_config.instruction,
-            "agent_type": agent_with_config.agent_type,
             "constraints": agent_with_config.constraints,
             "tools": agent_with_config.tools,
             "exit": agent_with_config.exit,
@@ -165,7 +166,7 @@ class Agent(DBBaseModel):
             "permission_type": agent_with_config.permission_type,
             "LTM_DB": agent_with_config.LTM_DB,
             "max_iterations": agent_with_config.max_iterations,
-            "user_timezone": agent_with_config.user_timezone
+            "user_timezone": agent_with_config.user_timezone,
         }
 
         agent_configurations = [
@@ -274,3 +275,19 @@ class Agent(DBBaseModel):
                 Agent: Agent object is returned.
         """
         return session.query(Agent).filter(Agent.id == agent_id).first()
+
+    @classmethod
+    def find_org_by_agent_id(cls, session, agent_id: int):
+        """
+        Finds the organization for the given agent.
+
+        Args:
+            session: The database session.
+            agent_id: The agent id.
+
+        Returns:
+            Organisation: The found organization.
+        """
+        agent = session.query(Agent).filter_by(id=agent_id).first()
+        project = session.query(Project).filter(Project.id == agent.project_id).first()
+        return session.query(Organisation).filter(Organisation.id == project.organisation_id).first()

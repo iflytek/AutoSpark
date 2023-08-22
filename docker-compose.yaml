@@ -17,6 +17,9 @@ services:
     environment:
       - SPARK_DOMAIN=${SPARK_DOMAIN}
       - SPARK_API_BASE=${SPARK_API_BASE}
+      - SET_CONTAINER_TIMEZONE=true
+      - CONTAINER_TIMEZONE=Asia/Shanghai
+      - TZ=Asia/Shanghai
   celery:
     volumes:
       - "./:/app"
@@ -33,8 +36,11 @@ services:
     networks:
       - as_network
     environment:
+      - SET_CONTAINER_TIMEZONE=true
+      - CONTAINER_TIMEZONE=Asia/Shanghai
       - SPARK_DOMAIN=${SPARK_DOMAIN}
       - SPARK_API_BASE=${SPARK_API_BASE}
+      - TZ=Asia/Shanghai
   gui:
     build:
       context: ./gui
@@ -65,9 +71,12 @@ services:
   as__postgres:
     image: "docker.io/library/postgres:latest"
     environment:
+      - TZ=Asia/Shanghai
       - POSTGRES_USER=autospark
       - POSTGRES_PASSWORD=password
       - POSTGRES_DB=as_main
+      - SET_CONTAINER_TIMEZONE=true
+      - CONTAINER_TIMEZONE=Asia/Shanghai
     volumes:
       - as_postgres_data:/var/lib/postgresql/data/
     networks:

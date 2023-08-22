@@ -12,7 +12,7 @@ from autospark.models.agent import Agent
 from autospark.models.agent_config import AgentConfiguration
 from autospark.models.agent_template import AgentTemplate
 from autospark.models.agent_template_config import AgentTemplateConfig
-from autospark.models.agent_workflow import AgentWorkflow
+from autospark.models.workflows.agent_workflow import AgentWorkflow
 from autospark.models.tool import Tool
 # from autospark.types.db import AgentTemplateIn, AgentTemplateOut
 

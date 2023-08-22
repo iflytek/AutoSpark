@@ -1,5 +1,7 @@
 {
-  "tools": {
-	"docker_tools":"https://github.com/whybeyoung/docker_tools"
-  }
+    "tools": {
+        "docker_tools": "https://github.com/whybeyoung/docker_tools",
+        "DuckDuckGo": "https://github.com/TransformerOptimus/SuperAGI-Tools/tree/main/DuckDuckGo",
+        "notion": "https://github.com/TransformerOptimus/SuperAGI-Tools/tree/main/notion"
+    }
 }

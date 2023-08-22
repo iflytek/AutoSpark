@@ -59,7 +59,54 @@ def download_tool(tool_url, target_folder):
                     outfile.write(infile.read())
 
     os.remove(tool_zip_file_path)
-    write_metadata(target_folder, {"code_link": tool_url, "author": owner})
+
+
+def download_marketplace_tool(tool_url, target_folder):
+    parsed_url = tool_url.split("/")
+    owner, repo = parsed_url[3], parsed_url[4]
+    archive_url = f"https://api.github.com/repos/{owner}/{repo}/zipball/main"
+    response = requests.get(archive_url)
+    tool_zip_file_path = os.path.join(target_folder, 'tool.zip')
+
+    with open(tool_zip_file_path, 'wb') as f:
+        f.write(response.content)
+
+    with zipfile.ZipFile(tool_zip_file_path, 'r') as z:
+        for member in z.namelist():
+            archive_folder, target_name = member.split('/', 1)
+            target_name = os.path.join(target_folder, target_name)
+            if member.endswith('/'):
+                os.makedirs(target_name, exist_ok=True)
+            elif not target_name.endswith('.md'):
+                with open(target_name, 'wb') as outfile, z.open(member) as infile:
+                    outfile.write(infile.read())
+
+    os.remove(tool_zip_file_path)
+
+
+def get_marketplace_tool_links(repo_url):
+    folder_links = {}
+    api_url = f"https://api.github.com/repos/{repo_url}/contents"
+    response = requests.get(api_url)
+    contents = response.json()
+
+    for content in contents:
+        if content["type"] == "dir":
+            folder_name = content["name"]
+            folder_link = f"https://github.com/{repo_url}/tree/main/{folder_name}"
+            folder_links[folder_name] = folder_link
+
+    return folder_links
+
+
+def update_tools_json(existing_tools_json_path, folder_links):
+    with open(existing_tools_json_path, "r") as file:
+        tools_data = json.load(file)
+    if "tools" not in tools_data:
+        tools_data["tools"] = {}
+    tools_data["tools"].update(folder_links)
+    with open(existing_tools_json_path, "w") as file:
+        json.dump(tools_data, file, indent=4)
 
 
 def load_tools_config():
@@ -69,15 +116,35 @@ def load_tools_config():
         return config["tools"]
 
 
+def load_marketplace_tools():
+    marketplace_url = "TransformerOptimus/SuperAGI-Tools"
+    tools_config_path = str(Path(__file__).parent.parent)
+    tools_json_path = tools_config_path + "/tools.json"
+    # Get folder links from the repository
+    marketplace_tool_urls = get_marketplace_tool_links(marketplace_url)
+    # Update existing tools.json file
+    update_tools_json(tools_json_path, marketplace_tool_urls)
+
+
+def is_marketplace_url(url):
+    return url.startswith("https://github.com/TransformerOptimus/SuperAGI-Tools/tree")
+
 def download_and_extract_tools():
     tools_config = load_tools_config()
 
     for tool_name, tool_url in tools_config.items():
-        tool_folder = os.path.join("autospark", "tools", tool_name)
-        if not os.path.exists(tool_folder):
-            os.makedirs(tool_folder)
-        download_tool(tool_url, tool_folder)
+        if is_marketplace_url(tool_url):
+            tool_folder = os.path.join("superagi/tools/marketplace_tools")
+            if not os.path.exists(tool_folder):
+                os.makedirs(tool_folder)
+            download_marketplace_tool(tool_url, tool_folder)
+        else:
+            tool_folder = os.path.join("superagi/tools/external_tools", tool_name)
+            if not os.path.exists(tool_folder):
+                os.makedirs(tool_folder)
+            download_tool(tool_url, tool_folder)
 
 
 if __name__ == "__main__":
+    #load_marketplace_tools()
     download_and_extract_tools()

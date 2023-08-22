@@ -12,6 +12,7 @@ from jsonmerge import merge
 from pytz import timezone
 from sqlalchemy import func, or_
 from autospark.models.agent_execution_permission import AgentExecutionPermission
+from autospark.models.workflows.iteration_workflow import IterationWorkflow
 from autospark.worker import execute_agent
 from autospark.helper.auth import check_auth
 from autospark.models.agent import Agent
@@ -20,7 +21,7 @@ from autospark.models.agent_config import AgentConfiguration
 from autospark.models.agent_schedule import AgentSchedule
 from autospark.models.agent_template import AgentTemplate
 from autospark.models.project import Project
-from autospark.models.agent_workflow import AgentWorkflow
+from autospark.models.workflows.agent_workflow import AgentWorkflow
 from autospark.models.agent_execution import AgentExecution
 from autospark.models.tool import Tool
 from autospark.controllers.types.agent_schedule import AgentScheduleInput
@@ -168,7 +169,7 @@ def create_agent_with_config(agent_with_config: AgentConfigInput,
             - project_id (int): Identifier of the associated project.
             - description (str): Description of the agent.
             - goal (List[str]): List of goals for the agent.
-            - agent_type (str): Type of the agent.
+            - agent_workflow (str): Type of the agent.
             - constraints (List[str]): List of constraints for the agent.
             - tools (List[int]): List of tool identifiers associated with the agent.
             - exit (str): Exit condition for the agent.
@@ -200,14 +201,27 @@ def create_agent_with_config(agent_with_config: AgentConfigInput,
     agent_with_config.tools.extend(agent_toolkit_tools)
     db_agent = Agent.create_agent_with_config(db, agent_with_config)
 
-    start_step_id = AgentWorkflow.fetch_trigger_step_id(db.session, db_agent.agent_workflow_id)
+    start_step = AgentWorkflow.fetch_trigger_step_id(db.session, db_agent.agent_workflow_id)
+    iteration_step_id = IterationWorkflow.fetch_trigger_step_id(db.session,
+                                                                start_step.action_reference_id).id if start_step.action_type == "ITERATION_WORKFLOW" else -1
+
     # Creating an execution with RUNNING status
     execution = AgentExecution(status='CREATED', last_execution_time=datetime.now(), agent_id=db_agent.id,
-                               name="New Run", current_step_id=start_step_id)
+                               name="New Run", current_agent_step_id=start_step.id,iteration_workflow_step_id=iteration_step_id)
 
     agent_execution_configs = {
         "goal": agent_with_config.goal,
-        "instruction": agent_with_config.instruction
+        "instruction": agent_with_config.instruction,
+        "constraints": agent_with_config.constraints,
+        "toolkits": agent_with_config.toolkits,
+        "exit": agent_with_config.exit,
+        "tools": agent_with_config.tools,
+        "iteration_interval": agent_with_config.iteration_interval,
+        "model": agent_with_config.model,
+        "permission_type": agent_with_config.permission_type,
+        "LTM_DB": agent_with_config.LTM_DB,
+        "max_iterations": agent_with_config.max_iterations,
+        "user_timezone": agent_with_config.user_timezone,
     }
     db.session.add(execution)
     db.session.commit()
