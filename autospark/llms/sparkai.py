@@ -9,7 +9,7 @@ from sparkai.models.chat import ChatBody, ChatResponse
 
 
 class SparkAI(BaseLlm):
-    def __init__(self, api_key, api_secret, app_id, model="x2-v", temperature=0.6,
+    def __init__(self, api_key, api_secret, app_id, model="spark-2.1", temperature=0.6,
                  max_tokens=get_config("MAX_MODEL_TOKEN_LIMIT"), top_p=1,
                  frequency_penalty=0,
                  presence_penalty=0, number_of_results=1):
@@ -118,8 +118,8 @@ class SparkAI(BaseLlm):
             list: The models.
         """
         try:
-            models = ['x2-v']
-            models_supported = ['x2-v']
+            models = ['spark-2.1']
+            models_supported = ['spark-2.1']
             print("CHECK THIS1", models)
             models = [model for model in models if model in models_supported]
             return models
