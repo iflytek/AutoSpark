@@ -44,14 +44,14 @@ services:
   gui:
     build:
       context: ./gui
-      dockerfile: DockerfileProd
+      dockerfile: Dockerfile
       args:
-        - NODE_ENV=production
+        - NODE_ENV=dev
         - NEXT_PUBLIC_API_BASE_URL=/api
         - GITHUB_CLIENT_ID=${GITHUB_CLIENT_ID}
     environment:
       - NEXT_PUBLIC_API_BASE_URL=/api
-        - GITHUB_CLIENT_ID=${GITHUB_CLIENT_ID}
+      - GITHUB_CLIENT_ID=${GITHUB_CLIENT_ID}
     networks:
       - as_network
 #    volumes:

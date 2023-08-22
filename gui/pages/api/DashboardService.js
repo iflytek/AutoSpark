@@ -24,9 +24,11 @@ export const getTools = () => {
     return api.get(`/tools/list`);
 };
 
-export const getAgentDetails = (agentId) => {
-    return api.get(`/agents/get/details/${agentId}`);
+export const getAgentDetails = (agentId,agentExecutionId) => {
+    // return api.get(`/agents/get/details/${agentId}`);
+    return api.get(`/agent_executions_configs/details/agent_id/${agentId}/agent_execution_id/${agentExecutionId}`);
 };
+
 export const getAgentWorkflows = () => {
     return api.get(`organisations/agent_workflows`);
 };

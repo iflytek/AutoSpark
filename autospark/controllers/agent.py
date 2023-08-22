@@ -24,6 +24,7 @@ from autospark.models.project import Project
 from autospark.models.workflows.agent_workflow import AgentWorkflow
 from autospark.models.agent_execution import AgentExecution
 from autospark.models.tool import Tool
+from autospark.lib.logger import logger
 from autospark.controllers.types.agent_schedule import AgentScheduleInput
 from autospark.controllers.types.agent_with_config import AgentConfigInput
 from autospark.controllers.types.agent_with_config_schedule import AgentConfigSchedule
@@ -486,6 +487,7 @@ def get_agent_configuration(agent_id: int,
 
     # Construct the JSON response
     response = {result.key: result.value for result in results}
+    logger.info(str(response))
     response = merge(response, {"name": agent.name, "description": agent.description,
                                 # Query the AgentConfiguration table for the speci
                                 "goal": eval(response["goal"]),

@@ -105,7 +105,8 @@ class AgentSchemaToolOutputParser(BaseOutputParser):
         response = JsonCleaner.extract_json_section(response)
         # ast throws error if true/false params passed in json
         response = JsonCleaner.clean_boolean(response)
-
+        # 这里如果返回是一个json ，由于星火v2.1 现在对json schema理解还不那么充分，这里做一次fix
+        response = self.fix_json_according_schema(response, "")
         # OpenAI returns `str(content_dict)`, literal_eval reverses this
         try:
             logger.debug("AgentSchemaOutputParser: ", response)
@@ -118,3 +119,43 @@ class AgentSchemaToolOutputParser(BaseOutputParser):
         except BaseException as e:
             logger.info(f"AgentSchemaToolOutputParser: Error parsing JSON respons {e}")
             raise e
+
+    def fix_json_according_schema(self, j, schema) -> str:
+        '''星火会返回如下错误案例， 其对 code_description 中把schema的输出也返回了，本质上是模型对shcema理解还
+        {
+            "thoughts": {
+                "reasoning": "首先，我们需要创建一个游戏类，该类包含游戏的基本属性和方法。然后，我们需要创建一个蛇类，该类包含蛇的属性和方法。接下来，我们需要创建一个食物类，该类包含食物的属性和方法。最后，我们需要创建一个主函数，用于初始化游戏、蛇和食物，并处理游戏循环。"
+            },
+            "tool": {
+                "name": "CodingTool",
+                "args": {
+                    "code_description": {
+                        "title": "贪吃蛇游戏代码架构",
+                        "description": "编写贪吃蛇游戏的核心类、函数和方法",
+                        "type": "string"
+                    },
+                    "spec_file_name": "snake_game.py"
+                }
+            }
+        }
+        '''
+        try:
+            js = json.loads(j)
+        except Exception:
+            return j
+
+        if not 'tool' in js:
+            return j
+
+        if not "args" in js.get("tool"):
+            return j
+
+        args = js.get('tool').get("args")
+        for k, v in args.items():
+            if type(v) == dict:
+                if 'title' in v and 'description' in v and 'type' in v:
+                    args[k] = v['description']
+                else:
+                    args[k] = ''
+        js.get("tool")['args'] =args
+        return json.dumps(js)

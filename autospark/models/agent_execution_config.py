@@ -173,10 +173,11 @@ class AgentExecutionConfiguration(DBBaseModel):
 
         results_agent_dict["name"] = agent.name
         agent_workflow = AgentWorkflow.find_by_id(session, agent.agent_workflow_id)
-        results_agent_dict["agent_workflow"] = agent_workflow.name
-        results_agent_dict["description"] = agent.description
-        results_agent_dict["calls"] = total_calls
-        results_agent_dict["tokens"] = total_tokens
+        if agent_workflow:
+            results_agent_dict["agent_workflow"] = agent_workflow.name
+            results_agent_dict["description"] = agent.description
+            results_agent_dict["calls"] = total_calls
+            results_agent_dict["tokens"] = total_tokens
 
         knowledge_name = ""
         if 'knowledge' in results_agent_dict and results_agent_dict['knowledge'] != 'None':
