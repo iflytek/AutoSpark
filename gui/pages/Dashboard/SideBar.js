@@ -16,7 +16,7 @@ export default function SideBar({onSelectEvent}) {
 
   return (
     <div className={styles.side_bar}>
-      <div><Image width={64} height={58} className={styles.logo} src="/images/watermark.png" alt="super-agi-logo"/>
+      <div><Image width={64} height={58} className={styles.logo} src="/images/auto-spark-white.svg" alt="super-agi-logo"/>
       </div>
       <div className={styles.selection_section}>
         <div onClick={() => handleClick(sectionSelected !== 'agents' ? 'agents' : '')}

@@ -120,7 +120,7 @@ export default function ActivityFeed({selectedRunId, selectedView, setFetchedDat
                                                     style={{background: '#e9f1fc', padding: '20px', cursor: 'default'}}>
               <div style={{display: 'flex'}}>
                 {f.role === 'user' && <div className={styles.feed_icon}>💁</div>}
-                {f.role === 'system' && <div ><Image className={styles.feed_icon} width={20} height={20} src="/images/watermark.png" alt="schedule-icon"/> </div>}
+                {f.role === 'system' && <div ><Image className={styles.feed_icon} width={20} height={20} src="/images/auto-spark.svg" alt="schedule-icon"/> </div>}
                 {f.role === 'assistant' && <div><Image className={styles.feed_icon} width={20} height={20} src="/images/spark_icon.png" alt="schedule-icon"/></div>}
                 <div className={styles.feed_title}>{f?.feed || ''}</div>
               </div>
