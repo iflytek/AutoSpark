@@ -230,7 +230,7 @@ export default function Content({env, selectedView, selectedProjectId, organisat
         } : {width: '80.5vw'}}>
           <div className={styles.empty_state}>
             <div>
-              <div><Image width={264} height={238} src="/images/watermark.png" alt="empty-state"/></div>
+              <div><Image width={264} height={238} src="/images/auto-spark.svg" alt="empty-state"/></div>
               <div style={{width: '100%', display: 'flex', justifyContent: 'center', marginTop: '30px'}}>
                 <button onClick={() => addTab({
                   id: -1,
