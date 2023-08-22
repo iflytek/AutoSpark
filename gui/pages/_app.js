@@ -26,7 +26,7 @@ import {toast} from "react-toastify";
 
 export default function App() {
     const [selectedView, setSelectedView] = useState('');
-    const [applicationState, setApplicationState] = useState("LOADING");
+    const [applicationState, setApplicationState] = useState("LOADING"); //调试完需要改回到LOADING
     const [selectedProject, setSelectedProject] = useState(null);
     const [userName, setUserName] = useState('');
     const [organisationId, setOrganisationId] = useState(null);
@@ -85,14 +85,14 @@ export default function App() {
         checkEnvironment()
             .then((response) => {
                 const env = response.data.env;
-                setEnv(env);
+                setEnv(env);//调试注释了，记得还原
 
                 if (typeof window !== 'undefined') {
                     localStorage.setItem('applicationEnvironment', env);
                 }
 
                 if (response.data.env === 'PROD') {
-                    setApplicationState("NOT_AUTHENTICATED");
+                    setApplicationState("NOT_AUTHENTICATED");//调试注释了，记得还原
                     const queryParams = router.asPath.split('?')[1];
                     const parsedParams = querystring.parse(queryParams);
                     let access_token = parsedParams.access_token || null;
@@ -215,7 +215,7 @@ export default function App() {
                 </div>
             </div>) : !showMarketplace ? (<div className="signInStyle">
                 <div className="signInTopBar">
-                    <div className="superAgiLogo"><Image width={90} height={80} src="/images/watermark.png"
+                    <div className="superAgiLogo"><Image width={90} height={80} src="/images/auto-spark.svg"
                                                          alt="super-agi-logo"/></div>
                 </div>
                 <div className="signInCenter">
@@ -224,7 +224,7 @@ export default function App() {
                             <Image width={20} height={20} src="/images/github.svg" alt="github"/>&nbsp;Continue with
                             Github
                         </button>
-                        <div className="signInInfo">
+                        <div className="signInInfo" style={{color:'#ffffff'}}>
                             By continuing, you agree to Super AGI’s Terms of Service and Privacy Policy, and to receive
                             important
                             updates.
@@ -236,16 +236,6 @@ export default function App() {
                     </div>}
                 </div>
             </div>) : true}
-            {/* <div className="signInStyle">
-        <div className="signInTopBar">
-          <div className="superAgiLogo"><Image width={132} height={118} src="/images/watermark.png" alt="super-agi-logo"/></div>
-        </div>
-        <div className="signInCenter">
-          <div className="signInWrapper" style={{background: 'transparent'}}>
-            <div className="signInInfo" style={{fontSize: '16px', fontFamily: 'Source Code Pro'}}>{loadingText}</div>
-          </div>
-        </div>
-      </div> */}
         </div>
     );
 }
