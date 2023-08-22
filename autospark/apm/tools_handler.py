@@ -4,6 +4,8 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from autospark.models.events import Event
+from autospark.models.tool import Tool
+from autospark.models.toolkit import Toolkit
 
 
 class ToolsHandler:
