@@ -140,7 +140,7 @@ class AgentWorkflowSeed:
         step3 = AgentWorkflowStep.find_or_create_tool_workflow_step(session, agent_workflow.id,
                                                                     str(agent_workflow.id) + "_step3",
                                                                     CodingTool().name,
-                                                                    "Code description")
+                                                                      "Code description")
 
 
         step4 = AgentWorkflowStep.find_or_create_tool_workflow_step(session, agent_workflow.id,
