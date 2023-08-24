@@ -3,7 +3,8 @@ from typing import List
 
 from autospark_kit.tools.base_tool import BaseToolkit, BaseTool
 
-from autospark.tools.app_traversal.traversal_tool import ClickDevice, GetDeviceHierarchy
+from autospark.tools.app_traversal.traversal_tool import ClickDevice, GetDeviceHierarchy, GetOperationHistory, \
+    OperationSetup
 
 
 class TraversalToolkit(BaseToolkit, ABC):
@@ -14,6 +15,8 @@ class TraversalToolkit(BaseToolkit, ABC):
         return [
             ClickDevice(),
             GetDeviceHierarchy(),
+            GetOperationHistory(),
+            OperationSetup(),
         ]
 
     def get_env_keys(self) -> List[str]:

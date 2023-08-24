@@ -1,13 +1,13 @@
 import xmltodict
 import xml.etree.ElementTree as ET
 from utils import read_hierarchy
-from config import run_config
+
 class Hierarchy(object):
     """
     Hierarchy类，用于对hierarchy树进行处理和输出
     """
 
-    def __init__(self, hierarchy_tree: str, specified_package_name=run_config['packge_name']):
+    def __init__(self, hierarchy_tree: str, specified_package_name):
         """
         初始化方法
         :param hierarchy_tree: 需要处理的hierarchy树
