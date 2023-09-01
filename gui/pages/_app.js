@@ -114,7 +114,7 @@ export default function App() {
                     const userData = {
                         "name": "AutoSpark User",
                         "email": "autospark@iflytek.com",
-                        "password": "pass@123",
+                        "password": "iflytek!123",
                     }
                     login(userData)
                         .then((response) => {
