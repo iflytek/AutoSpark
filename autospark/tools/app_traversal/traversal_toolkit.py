@@ -21,7 +21,7 @@ class TraversalToolkit(BaseToolkit, ABC):
 
     def get_env_keys(self) -> List[str]:
         return [
-            "llm",
-            "device",
-            "packge_name"
+            "LLM",
+            "DEVICE",
+            "PACKAGE_NAME"
         ]

@@ -19,6 +19,7 @@ services:
       - SPARK_API_BASE=${SPARK_API_BASE}
       - SET_CONTAINER_TIMEZONE=true
       - CONTAINER_TIMEZONE=Asia/Shanghai
+      - CRYPTOGRAPHY_DONT_BUILD_RUST=1
       - TZ=Asia/Shanghai
   celery:
     volumes:
@@ -41,6 +42,7 @@ services:
       - SPARK_DOMAIN=${SPARK_DOMAIN}
       - SPARK_API_BASE=${SPARK_API_BASE}
       - TZ=Asia/Shanghai
+      - CRYPTOGRAPHY_DONT_BUILD_RUST=1
   gui:
     build:
       context: ./gui

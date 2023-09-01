@@ -82,6 +82,18 @@ class AgentWorkflowSeed:
         session.commit()
 
     @classmethod
+    def build_app_traversal_test(cls, session):
+        agent_workflow = AgentWorkflow.find_or_create_by_name(session, "App Traversal Test Workflow",
+                                                              "App Traversal Test Workflow")
+        cp = 'Respond with only valid JSON conforming to the given json schema. Response should contain tool name and tool arguments to achieve the given instruction.'
+        step1 = AgentWorkflowStep.find_or_create_tool_workflow_step(session, agent_workflow.id,
+                                                                    str(agent_workflow.id) + "_step1",
+                                                                    ListFileTool().name,
+                                                                    "Read files from the resource manager",
+                                                                    step_type="TRIGGER",
+                                                                    completion_prompt=cp)
+
+    @classmethod
     def build_recruitment_workflow(cls, session):
         agent_workflow = AgentWorkflow.find_or_create_by_name(session, "Recruitment Workflow",
                                                               "Recruitment Workflow")
@@ -122,7 +134,6 @@ class AgentWorkflowSeed:
         AgentWorkflowStep.add_next_workflow_step(session, step5.id, step2.id)
         session.commit()
 
-
     @classmethod
     def build_coding_workflow(cls, session):
         agent_workflow = AgentWorkflow.find_or_create_by_name(session, "SuperCoder", "SuperCoder")
@@ -140,8 +151,7 @@ class AgentWorkflowSeed:
         step3 = AgentWorkflowStep.find_or_create_tool_workflow_step(session, agent_workflow.id,
                                                                     str(agent_workflow.id) + "_step3",
                                                                     CodingTool().name,
-                                                                      "Code description")
-
+                                                                    "Code description")
 
         step4 = AgentWorkflowStep.find_or_create_tool_workflow_step(session, agent_workflow.id,
                                                                     str(agent_workflow.id) + "_step4",
@@ -153,7 +163,6 @@ class AgentWorkflowSeed:
         AgentWorkflowStep.add_next_workflow_step(session, step3.id, step4.id)
         AgentWorkflowStep.add_next_workflow_step(session, step4.id, -1, "YES")
         AgentWorkflowStep.add_next_workflow_step(session, step4.id, step3.id, "NO")
-
 
     @classmethod
     def build_goal_based_agent(cls, session):
