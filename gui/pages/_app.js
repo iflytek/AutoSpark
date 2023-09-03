@@ -128,14 +128,14 @@ export default function App() {
                             console.error('Error login user:', error);
 
                         });
-                    // addUser(userData)
-                    //   .then((response) => {
-                    //     setUserName(response.data.name);
-                    //     fetchOrganisation(response.data.id);
-                    //   })
-                    //   .catch((error) => {
-                    //     console.error('Error adding user:', error);
-                    //   });
+                    addUser(userData)
+                      .then((response) => {
+                        setUserName(response.data.name);
+                        fetchOrganisation(response.data.id);
+                      })
+                      .catch((error) => {
+                        console.error('Error adding user:', error);
+                      });
                 }
             })
             .catch((error) => {
