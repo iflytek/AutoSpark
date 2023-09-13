@@ -141,6 +141,7 @@ class AgentToolStepHandler:
         step_response = step_response.replace("'", "").replace("\"", "")
         return step_response
 
+
     def _build_tool_input_prompt(self, step_tool: AgentWorkflowStepTool, tool: BaseTool, agent_execution_config: dict):
         super_agi_prompt = PromptReader.read_agent_prompt(__file__, "agent_tool_input.txt")
         super_agi_prompt = super_agi_prompt.replace("{goals}", AgentPromptBuilder.add_list_items_to_string(

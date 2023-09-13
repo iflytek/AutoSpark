@@ -11,7 +11,8 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 RUN pip install llama-index==0.6.35
 RUN pip config set global.index-url https://repo.model.xfyun.cn/api/packages/administrator/pypi/simple  &&  pip config set global.extra-index-url https://pypi.mirrors.ustc.edu.cn/simple/
-RUN pip install  spark-ai-python remote_pdb   websocket-client  autospark-kit --force  -i https://repo.model.xfyun.cn/api/packages/administrator/pypi/simple
+
+RUN pip install   remote_pdb spark-ai-python  websocket-client  autospark-kit --force  -i https://repo.model.xfyun.cn/api/packages/administrator/pypi/simple
 
 
 WORKDIR /app

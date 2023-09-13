@@ -4,9 +4,16 @@ from typing import Dict, NamedTuple, List
 import re
 import ast
 import json5
+
+from autospark.agent.agent_message_builder import AgentLlmMessageBuilder
+from autospark.agent.agent_prompt_builder import AgentPromptBuilder
 from autospark.helper.json_cleaner import JsonCleaner
 from autospark.helper.spark_result_helper import SparkResultParser
+from autospark.helper.token_counter import TokenCounter
 from autospark.lib.logger import logger
+
+from signal import signal, SIGPIPE, SIG_DFL, SIG_IGN
+signal(SIGPIPE, SIG_IGN)
 
 
 class AgentGPTAction(NamedTuple):
@@ -26,6 +33,29 @@ class BaseOutputParser(ABC):
 
 
 class AgentSchemaOutputParser(BaseOutputParser):
+    def __init__(self, llm=None):
+        self.llm = llm
+
+    def fix_json_by_llm(self, session, agent_id, agent_execution_id, jsonStr: str) -> str:
+
+        if not self.llm or not session:
+            return jsonStr
+        else:
+            prompt = AgentPromptBuilder.get_json_fixer_prompt(jsonStr)
+            messages = AgentLlmMessageBuilder(session, self.llm, agent_id, agent_execution_id) \
+                .build_agent_messages(prompt, [], history_enabled=False,
+                                      completion_prompt=None)
+            current_tokens = TokenCounter.count_message_tokens(messages, self.llm.get_model())
+
+            response = self.llm.chat_completion(messages,
+                                                TokenCounter.token_limit(self.llm.get_model()) - current_tokens)
+            content = response['content']
+            if content.startswith("```") and content.endswith("```"):
+                content = "```".join(content.split("```")[1:-1])
+                content = JsonCleaner.extract_json_section(content)
+
+            return content
+
     def fix_json_according_schema(self, j, schema) -> str:
         '''星火会返回如下错误案例， 其对 code_description 中把schema的输出也返回了，本质上是模型对shcema理解还
         {
@@ -63,10 +93,10 @@ class AgentSchemaOutputParser(BaseOutputParser):
                     args[k] = v['description']
                 else:
                     args[k] = ''
-        js.get("tool")['args'] =args
+        js.get("tool")['args'] = args
         return json.dumps(js)
 
-    def parse(self, response: str) -> AgentGPTAction:
+    def parse(self, response: str, session=None, agent_id: str = '', agent_execution_id: str = '') -> AgentGPTAction:
         if response.startswith("```") and response.endswith("```"):
             response = "```".join(response.split("```")[1:-1])
             response = JsonCleaner.extract_json_section(response)
@@ -76,21 +106,15 @@ class AgentSchemaOutputParser(BaseOutputParser):
         # OpenAI returns `str(content_dict)`, literal_eval reverses this
         try:
             logger.debug("AgentSchemaOutputParser: %s" % response)
+
             response_obj = ast.literal_eval(response)
             return AgentGPTAction(
                 name=response_obj['tool']['name'],
                 args=response_obj['tool']['args'],
             )
         except BaseException as e:
-            logger.debug("Fallback to  SparkFormat Parser %s"%str(e))
-            try:
-                response_obj = SparkResultParser.parse(response)
-            except Exception as e:
-
-                return AgentGPTAction(
-                    name="ERROR",
-                    args={"error": f"Could not parse invalid format: {response} exception{str(e)}"},
-                )
+            st = self.fix_json_by_llm(session, agent_id, agent_execution_id, response)
+            response_obj = ast.literal_eval(st)
             return AgentGPTAction(
                 name=response_obj['tool']['name'],
                 args=response_obj['tool']['args'],
@@ -99,6 +123,7 @@ class AgentSchemaOutputParser(BaseOutputParser):
 
 class AgentSchemaToolOutputParser(BaseOutputParser):
     """Parses the output from the agent schema for the tool"""
+
     def parse(self, response: str) -> AgentGPTAction:
         if response.startswith("```") and response.endswith("```"):
             response = "```".join(response.split("```")[1:-1])
@@ -157,5 +182,5 @@ class AgentSchemaToolOutputParser(BaseOutputParser):
                     args[k] = v['description']
                 else:
                     args[k] = ''
-        js.get("tool")['args'] =args
+        js.get("tool")['args'] = args
         return json.dumps(js)

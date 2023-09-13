@@ -14,6 +14,7 @@ from autospark.models.agent_execution_permission import AgentExecutionPermission
 
 class ToolOutputHandler:
     """Handles the tool output response from the thinking step"""
+
     def __init__(self, agent_execution_id: int, agent_config: dict,
                  tools: list, output_parser=AgentSchemaOutputParser()):
         self.agent_execution_id = agent_execution_id
@@ -58,14 +59,16 @@ class ToolOutputHandler:
 
     def handle_tool_response(self, session, assistant_reply):
         """Only handle processing of tool response"""
-        action = self.output_parser.parse(assistant_reply)
+        action = self.output_parser.parse(assistant_reply, session=session, agent_id=self.agent_config["agent_id"],
+                                          agent_execution_id=self.agent_execution_id)
         agent = session.query(Agent).filter(Agent.id == self.agent_config["agent_id"]).first()
         organisation = agent.get_agent_organisation(session)
         tool_executor = ToolExecutor(organisation_id=organisation.id, agent_id=agent.id, tools=self.tools)
         return tool_executor.execute(session, action.name, action.args)
 
     def _check_permission_in_restricted_mode(self, session, assistant_reply: str):
-        action = self.output_parser.parse(assistant_reply)
+        action = self.output_parser.parse(assistant_reply, session=session, agent_id=self.agent_config["agent_id"],
+                                          agent_execution_id=self.agent_execution_id)
         tools = {t.name: t for t in self.tools}
 
         excluded_tools = [ToolExecutor.FINISH, '', None]
@@ -149,11 +152,14 @@ class ReplaceTaskOutputHandler:
         return TaskExecutorResponse(status=status, retry=False)
 
 
-def get_output_handler(output_type: str, agent_execution_id: int, agent_config: dict, agent_tools: list = []):
+def get_output_handler(llm, output_type: str, agent_execution_id: int, agent_config: dict, agent_tools: list = []):
     if output_type == "tools":
-        return ToolOutputHandler(agent_execution_id, agent_config, agent_tools)
+        return ToolOutputHandler(agent_execution_id, agent_config, agent_tools,
+                                 output_parser=AgentSchemaOutputParser(llm=llm))
     elif output_type == "replace_tasks":
-        return ReplaceTaskOutputHandler(agent_execution_id, agent_config)
+        return ReplaceTaskOutputHandler(agent_execution_id, agent_config,
+                                        )
     elif output_type == "tasks":
         return TaskOutputHandler(agent_execution_id, agent_config)
-    return ToolOutputHandler(agent_execution_id, agent_config, agent_tools)
+    return ToolOutputHandler(agent_execution_id, agent_config, agent_tools,
+                             output_parser=AgentSchemaOutputParser(llm=llm))

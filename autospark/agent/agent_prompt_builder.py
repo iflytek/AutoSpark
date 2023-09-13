@@ -157,6 +157,13 @@ class AgentPromptBuilder:
                 "variables": ["goals", "instructions", "last_task", "last_task_result", "pending_tasks"]}
 
     @classmethod
+    def get_json_fixer_prompt(cls, json_str):
+        # just executed task `{last_task}` and got the result `{last_task_result}`
+        as_prompt = PromptReader.read_agent_prompt(__file__, "json_fix_spark.txt")
+        return as_prompt.replace("{json_str}",json_str)
+
+
+    @classmethod
     def replace_main_variables(cls, as_prompt: str, goals: List[str], instructions: List[str],
                                constraints: List[str],
                                tools: List[BaseTool], add_finish_tool: bool = True, model_source_type: ModelSourceType=ModelSourceType.OpenAI):

@@ -81,7 +81,7 @@ class AgentIterationStepHandler:
         AgentExecution.update_tokens(self.session, self.agent_execution_id, total_tokens)
 
         assistant_reply = response['content']
-        output_handler = get_output_handler(iteration_workflow_step.output_type,
+        output_handler = get_output_handler(self.llm, iteration_workflow_step.output_type,
                                             agent_execution_id=self.agent_execution_id,
                                             agent_config=agent_config, agent_tools=agent_tools)
         response = output_handler.handle(self.session, assistant_reply)

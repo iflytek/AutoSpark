@@ -8,6 +8,7 @@ from autospark.agent.agent_tool_step_handler import AgentToolStepHandler
 from autospark.agent.agent_iteration_step_handler import AgentIterationStepHandler
 import remote_pdb
 from autospark.agent.auto_spark import AutoSpark
+from autospark.agent.output_parser import AgentSchemaOutputParser
 from autospark.config.config import get_config
 from autospark.helper.encyption_helper import decrypt_data
 from autospark.lib.logger import logger
@@ -209,12 +210,15 @@ class AgentExecutor:
                                               resource_description=resource_summary,
                                               session=session)
 
+        llm = get_model(model=parsed_config["model"], api_key=model_api_key,
+                        api_secret=model_api_secret, app_id=model_app_id),
         spawned_agent = AutoSpark(ai_name=parsed_config["name"], ai_role=parsed_config["description"],
-                                  llm=get_model(model=parsed_config["model"], api_key=model_api_key,
-                                                api_secret=model_api_secret, app_id=model_app_id), tools=tools,
+                                  llm=llm,
+                                  tools=tools,
                                   memory=memory,
                                   agent_config=parsed_config,
-                                  agent_execution_config=parsed_execution_config)
+                                  agent_execution_config=parsed_execution_config,
+                                  output_parser=AgentSchemaOutputParser(llm=llm))
 
         try:
             self.handle_wait_for_permission(agent_execution, spawned_agent, session)

@@ -175,7 +175,7 @@ class AgentWorkflowSeed:
 
     @classmethod
     def build_task_based_agent(cls, session):
-        agent_workflow = AgentWorkflow.find_or_create_by_name(session, "Dynamic Task Workflow", "Dynamic Task Workflow")
+        agent_workflow = AgentWorkflow.find_or_create_by_name(session, "大模型拆分执行工作流", "大模型拆分执行工作流")
         step1 = AgentWorkflowStep.find_or_create_iteration_workflow_step(session, agent_workflow.id,
                                                                          str(agent_workflow.id) + "_step1",
                                                                          "Initialize Tasks-I", step_type="TRIGGER")

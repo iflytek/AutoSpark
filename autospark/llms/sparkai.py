@@ -44,7 +44,7 @@ class SparkAI(BaseLlm):
         # c.send_messages(messages)
 
     def get_source(self):
-        return "openai"
+        return "iflytek"
 
     def get_api_key(self):
         """

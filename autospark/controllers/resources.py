@@ -30,7 +30,7 @@ s3 = boto3.client(
 )
 
 
-@router.post("/add/{agent_id}",dependencies=[Depends(HTTPBearer())], status_code=201)
+@router.post("/add/{agent_id}",dependencies=[], status_code=201)
 async def upload(agent_id: int, file: UploadFile = File(...), name=Form(...), size=Form(...), type=Form(...),
                  Authorize: AuthJWT = Depends(check_auth)):
     """
@@ -98,7 +98,7 @@ async def upload(agent_id: int, file: UploadFile = File(...), name=Form(...), si
     return resource
 
 
-@router.get("/get/all/{agent_id}", dependencies=[Depends(HTTPBearer())],status_code=200)
+@router.get("/get/all/{agent_id}", dependencies=[],status_code=200)
 def get_all_resources(agent_id: int,
                       Authorize: AuthJWT = Depends(check_auth)):
     """
@@ -116,7 +116,7 @@ def get_all_resources(agent_id: int,
     return resources
 
 
-@router.get("/get/{resource_id}",dependencies=[Depends(HTTPBearer())], status_code=200)
+@router.get("/get/{resource_id}",dependencies=[], status_code=200)
 def download_file_by_id(resource_id: int,
                         Authorize: AuthJWT = Depends(check_auth)):
     """
