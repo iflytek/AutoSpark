@@ -1,6 +1,6 @@
 <p align="center">
   <a href="https://superagi.com//#gh-light-mode-only">
-    <img src="gui/public/images/SVGfile/AutoSpark-logo-05.svg" width="100px" alt="AutoSpark logo" />
+    <img src="gui/public/images/SVGfile/AutoSpark-logo-05.svg" width="90px" alt="AutoSpark logo" />
   </a>
 
 </p>
