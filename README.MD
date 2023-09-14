@@ -1,6 +1,6 @@
 <p align="center">
   <a href="https://superagi.com//#gh-light-mode-only">
-    <img src="gui/public/images/spark_icon.png" width="37px" alt="AutoSpark logo" />
+    <img src="gui/public/images/SVGfile/AutoSpark-logo-03.svg" width="37px" alt="AutoSpark logo" />
   </a>
 
 </p>
@@ -78,8 +78,13 @@ AutoSpark是一款专注中文领域大模型AI智能体(Agent)应用框架, 当
 
 **GUI**
 
-![img](docs/imgs/settings.png)
-![img.png](docs/imgs/running.png)
+![img](docs/imgs/spark_desk.png)
+![img](docs/imgs/spark_login.png)
+![img](docs/imgs/spark_marketPlace.png)
+![img](docs/imgs/tool_kit.png)
+![img](docs/imgs/new_agent.png)
+![img.png](docs/imgs/run_process.png)
+
 
 ## 🛣 Roadmap
 [关注最新RoadMap讨论 🔗](https://github.com/iflytek/AutoSpark/discussions/1)
@@ -157,7 +162,6 @@ AutoSpark是一款专注中文领域大模型AI智能体(Agent)应用框架, 当
   答:
   * 我们正在紧锣密鼓的调优框架，大模型本身效果也在逐步提升，可以关注临近的[星火大模型发布会](https://xinghuo.xfyun.cn/)请关注:
 
-  ![img.png](docs/imgs/v2.0.png)
 
 ## 关联项目
 [Spark AI Python SDK](https://github.com/iflytek/spark-ai-python)
