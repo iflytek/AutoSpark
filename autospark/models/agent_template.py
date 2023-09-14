@@ -2,7 +2,7 @@ import json
 
 import requests
 from sqlalchemy import Column, Integer, String, Text
-
+from autospark.lib.logger import logger
 from autospark.models.agent_template_config import AgentTemplateConfig
 from autospark.models.workflows.agent_workflow import AgentWorkflow
 from autospark.models.base_model import DBBaseModel
